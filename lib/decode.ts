@@ -356,6 +356,10 @@ export class VINDecoder {
       info.model = modelPatterns[0].value!;
     }
 
+    // Track fuel types to determine if vehicle is hybrid
+    let primaryFuelType: string | undefined;
+    let secondaryFuelType: string | undefined;
+
     // Extract other information from pattern matches
     for (const pattern of patterns) {
       if (!pattern.value) continue;
@@ -380,11 +384,11 @@ export class VINDecoder {
           info.driveType = pattern.value;
           break;
         case 'Fuel Type - Primary':
+          primaryFuelType = pattern.value;
           info.fuelType = pattern.value;
           break;
         case 'Fuel Type - Secondary':
-          // Assume hybrid if secondary fuel type is present
-          info.fuelType = 'Hybrid';
+          secondaryFuelType = pattern.value;
           break;
         case 'Transmission':
           info.transmission = pattern.value;
@@ -394,6 +398,17 @@ export class VINDecoder {
           break;
         case 'Gross Vehicle Weight Rating From':
           info.gvwr = pattern.value;
+      }
+    }
+
+    // Set fuelType to Hybrid only if both fuel types are present and one is electric
+    if (primaryFuelType && secondaryFuelType) {
+      const isElectricPresent =
+        primaryFuelType.toLowerCase().includes('electric') ||
+        secondaryFuelType.toLowerCase().includes('electric');
+
+      if (isElectricPresent) {
+        info.fuelType = 'Hybrid';
       }
     }
 
