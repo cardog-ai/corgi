@@ -2,7 +2,8 @@ import { DatabaseAdapter } from './db/adapter';
 import { VPICDatabase } from './db';
 import { PatternMatcher } from './pattern';
 import { createLogger } from './logger';
-import { BODY_STYLE_MAP, BodyStyle } from './types';
+import { BODY_STYLE_MAP } from './types';
+import { BodyStyle, ErrorCode, ErrorCategory, ErrorSeverity } from './enums';
 import {
   WMIResult,
   ModelYearResult,
@@ -10,9 +11,6 @@ import {
   PatternMatch,
   DecodeError,
   DecodeResult,
-  ErrorCode,
-  ErrorCategory,
-  ErrorSeverity,
   ValidationError,
   StructureError,
   LookupError,
@@ -290,7 +288,7 @@ export class VINDecoder {
    * @param bodyStyle - Raw body style from database
    * @returns Standardized body style
    */
-  private coerceBodyStyle(bodyStyle: string): string {
+  private coerceBodyStyle(bodyStyle: string): BodyStyle {
     // If body style is in our map, use it
     if (bodyStyle in BODY_STYLE_MAP) {
       return BODY_STYLE_MAP[bodyStyle];
