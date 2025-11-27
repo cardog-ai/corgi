@@ -27,6 +27,12 @@ import {
 // Create logger for the decoder
 const logger = createLogger('VINDecoder');
 
+// Canonical VIN character sequence for a 30-year block (1980-2009 or 2010-2039)
+const modelYearCodes = [
+  'A','B','C','D','E','F','G','H','J','K','L','M','N','P','R','S','T','V','W',
+  'X','Y','1','2','3','4','5','6','7','8','9'
+];
+
 /**
  * Helper function to decode a VIN using a provided database adapter
  *
@@ -584,65 +590,18 @@ export class VINDecoder {
    */
   private determineModelYear(vin: string): ModelYearResult | null {
     const yearChar = vin[9].toUpperCase();
-    const yearMap = new Map<string, number>();
+    const position7 = vin[6].charCodeAt(0); // don't need uppercase for digits check
 
-    // First cycle (1980-2009)
-    // A-H: 1980-1987
-    for (let i = 0; i < 8; i++) {
-      yearMap.set(String.fromCharCode(65 + i), 1980 + i);
-    }
-    // J-N: 1988-1992 (skipping I)
-    for (let i = 0; i < 5; i++) {
-      yearMap.set(String.fromCharCode(74 + i), 1988 + i);
-    }
-    // P-Y: 1993-2009 (skipping O,Q,U)
-    for (let i = 0; i < 9; i++) {
-      const code = String.fromCharCode(80 + i);
-      if (code !== 'Q' && code !== 'U') {
-        yearMap.set(code, 1993 + i);
-      }
+    const index = modelYearCodes.indexOf(yearChar);
+    if (index === -1) {
+      return null;
     }
 
-    // Second cycle (2010-2039)
-    // A-H: 2010-2017
-    for (let i = 0; i < 8; i++) {
-      yearMap.set(String.fromCharCode(65 + i), 2010 + i);
-    }
-    // J-N: 2018-2022 (skipping I)
-    for (let i = 0; i < 5; i++) {
-      yearMap.set(String.fromCharCode(74 + i), 2018 + i);
-    }
-    // P-Y: 2023-2039 (skipping O,Q,U)
-    for (let i = 0; i < 9; i++) {
-      const code = String.fromCharCode(80 + i);
-      if (code === 'P') {
-        yearMap.set(code, 2023);
-      } else if (code === 'R') {
-        yearMap.set(code, 2024);
-      } else if (code === 'S') {
-        yearMap.set(code, 2025);
-      } else if (code === 'T') {
-        yearMap.set(code, 2026);
-      } else if (code === 'V') {
-        yearMap.set(code, 2027);
-      } else if (code === 'W') {
-        yearMap.set(code, 2028);
-      } else if (code === 'X') {
-        yearMap.set(code, 2029);
-      } else if (code === 'Y') {
-        yearMap.set(code, 2030);
-      }
-    }
-    // 1-9: 2031-2039
-    for (let i = 1; i <= 9; i++) {
-      yearMap.set(String(i), 2030 + i);
-    }
-
-    const baseYear = yearMap.get(yearChar);
-    if (!baseYear) return null;
+    // Position 7 determines the decade block per 49 CFR 565.15
+    const baseYear = position7 >= 48 && position7 <= 57 ? 1980 : 2010;
 
     // Adjust year for older vehicles
-    let adjustedYear = baseYear;
+    let adjustedYear = baseYear + index;
 
     // If the year would be in the future, subtract 30 years
     // This handles older vehicles from previous cycles

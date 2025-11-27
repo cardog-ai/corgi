@@ -47,6 +47,17 @@ const VALID_TEST_CASES = [
     },
   },
   {
+    vin: "2FTEF14H8TCA73155",
+    expected: {
+      make: "Ford",
+      model: "F-150",
+      year: 1996,
+      bodyStyle: BodyStyle.PICKUP,
+      valid: true,
+    },
+  },
+  {
+    // Incomplete VIN for 2013 F-150 to test partial decoding
     vin: "1FTFW1ET6DFA4553",
     expected: {
       make: "Ford",
@@ -374,8 +385,8 @@ describe("VIN Decoder Library", () => {
       await adapter.close();
     });
 
-    // Only test the first two test cases which are known to work reliably
-    VALID_TEST_CASES.slice(0, 2).forEach(({ vin, expected }) => {
+    // Only test the first three test cases which are known to work reliably
+    VALID_TEST_CASES.slice(0, 3).forEach(({ vin, expected }) => {
       it(`should correctly decode VIN: ${vin}`, async () => {
         const result = await decoder.decode(vin, {
           includePatternDetails: true,
