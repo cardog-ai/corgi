@@ -27,19 +27,24 @@
       "require": "./dist/index.cjs",
       "default": "./dist/index.mjs"
     },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.mjs",
+      "default": "./dist/browser.mjs"
+    },
     "./browser-adapter": {
       "types": "./dist/db/browser-adapter.d.ts",
-      "import": "./dist/db/browser-adapter.js",
-      "require": "./dist/db/browser-adapter.js"
+      "import": "./dist/db/browser-adapter.mjs",
+      "default": "./dist/db/browser-adapter.mjs"
     },
     "./d1-adapter": {
       "types": "./dist/db/d1-adapter.d.ts",
-      "import": "./dist/db/d1-adapter.js",
-      "require": "./dist/db/d1-adapter.js"
+      "import": "./dist/db/d1-adapter.mjs",
+      "default": "./dist/db/d1-adapter.mjs"
     }
   },
   "browser": {
-    "./dist/index.js": "./dist/browser.js",
+    "./dist/index.mjs": "./dist/browser.mjs",
     "better-sqlite3": false
   },
   "scripts": {
