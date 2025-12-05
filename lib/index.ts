@@ -38,13 +38,11 @@ import type {
   LookupError,
   PatternError,
   DatabaseError,
-  ErrorCode,
-  ErrorCategory,
-  ErrorSeverity,
   Position,
   DiagnosticInfo,
-  BodyStyle,
 } from './types';
+
+import { BodyStyle, ErrorCode, ErrorCategory, ErrorSeverity } from './enums';
 
 // Logger
 import { createLogger } from './logger';
@@ -309,16 +307,16 @@ export type {
   LookupError,
   PatternError,
   DatabaseError,
+  Position,
+  DiagnosticInfo,
+};
+
+// Export classes, enums and functions
+export {
   ErrorCode,
   ErrorCategory,
   ErrorSeverity,
-  Position,
-  DiagnosticInfo,
   BodyStyle,
-};
-
-// Export classes and functions
-export {
   VINDecoder,
   BrowserDatabaseAdapter,
   BrowserDatabaseAdapterFactory,
