@@ -1,6 +1,6 @@
 {
   "name": "@cardog/corgi",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "⚡ The fastest and most lightweight open-source VIN decoding library. Fully offline, TypeScript-first, with comprehensive NHTSA VPIC database integration for Node.js, browsers, and Cloudflare Workers.",
   "type": "module",
   "main": "./dist/index.cjs",
