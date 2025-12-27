@@ -1,9 +1,9 @@
-# 🐕 Corgi VIN Decoder
+# Corgi VIN Decoder
 
 <div align="center">
   <img src="./corgi.png" alt="Corgi - Fast VIN Decoder" width="200" height="200">
   <br>
-  <strong>The fastest and most lightweight open-source VIN decoding library on the planet.</strong>
+  <strong>The fastest and most lightweight open-source VIN decoding library.</strong>
 </div>
 
 <div align="center">
@@ -20,19 +20,35 @@
 
 Corgi is a blazing-fast, fully offline VIN decoder built with TypeScript. Powered by an optimized VPIC database, it delivers comprehensive vehicle information with zero network dependencies and lightning-fast performance across Node.js, browsers, and Cloudflare Workers.
 
-## ⚡ Performance First
+## Performance First
 
 - **Fully Offline**: No API calls, no network dependencies, no rate limits
-- **Lightning Fast**: Optimized SQLite database with pattern-based decoding
+- **Lightning Fast**: Native SQLite binding with optimized read-only access
 - **Tiny Footprint**: ~20MB compressed bundle with complete NHTSA dataset
-- **Zero Dependencies**: Self-contained with automatic database management
+- **Self-Contained**: Automatic database management and decompression
 - **Universal**: Works everywhere - Node.js, browsers, and edge computing
+- **Node 23+ Compatible**: Custom native binding ensures compatibility with all modern Node versions
 
-## 🚀 Quick Start
+## Quick Start
+
+### Requirements
+
+Corgi v2.0+ requires native compilation during installation:
+
+- **Node.js**: 18.0.0 or higher
+- **Python**: 3.x
+- **C++ Build Tools**:
+  - **macOS**: `xcode-select --install`
+  - **Linux**: `sudo apt-get install build-essential python3 libsqlite3-dev`
+  - **Windows**: Visual Studio Build Tools or Visual Studio with C++ support
+
+### Installation
 
 ```bash
 npm install @cardog/corgi
 ```
+
+The native SQLite binding will compile automatically during installation.
 
 ```typescript
 import { createDecoder } from "@cardog/corgi";
@@ -56,7 +72,7 @@ console.log(result.components.vehicle);
 await decoder.close();
 ```
 
-## 📋 What You Get
+## What You Get
 
 Corgi extracts comprehensive vehicle information from any VIN:
 
@@ -66,7 +82,7 @@ Corgi extracts comprehensive vehicle information from any VIN:
 - **Quality Metrics**: Confidence scores and validation results
 - **Standards Compliance**: Full NHTSA VPIC dataset integration
 
-## 🏗️ Platform Support
+## Platform Support
 
 ### Node.js
 
