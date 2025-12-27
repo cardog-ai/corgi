@@ -2,7 +2,8 @@ import { DatabaseAdapter } from './db/adapter';
 import { VPICDatabase } from './db';
 import { PatternMatcher } from './pattern';
 import { createLogger } from './logger';
-import { BODY_STYLE_MAP, BodyStyle } from './types';
+import { BODY_STYLE_MAP } from './types';
+import { BodyStyle, ErrorCode, ErrorCategory, ErrorSeverity } from './enums';
 import {
   WMIResult,
   ModelYearResult,
@@ -10,9 +11,6 @@ import {
   PatternMatch,
   DecodeError,
   DecodeResult,
-  ErrorCode,
-  ErrorCategory,
-  ErrorSeverity,
   ValidationError,
   StructureError,
   LookupError,
@@ -147,6 +145,18 @@ export class VINDecoder {
 
         result.metadata!.processingTime = Date.now() - startTime;
         return result;
+      }
+
+      // Add warning if year position is '0' (not used by some countries)
+      if (modelYear.year === 0) {
+        result.errors.push({
+          code: ErrorCode.INVALID_MODEL_YEAR,
+          category: ErrorCategory.VALIDATION,
+          severity: ErrorSeverity.WARNING,
+          message: 'Model year position contains "0" - year information not encoded (common for non-US vehicles)',
+          positions: [9],
+          details: 'Some countries do not use position 10 for model year and set it to "0"',
+        } as ValidationError);
       }
 
       result.components.modelYear = modelYear;
@@ -296,7 +306,7 @@ export class VINDecoder {
    * @param bodyStyle - Raw body style from database
    * @returns Standardized body style
    */
-  private coerceBodyStyle(bodyStyle: string): string {
+  private coerceBodyStyle(bodyStyle: string): BodyStyle {
     // If body style is in our map, use it
     if (bodyStyle in BODY_STYLE_MAP) {
       return BODY_STYLE_MAP[bodyStyle];
@@ -591,6 +601,15 @@ export class VINDecoder {
   private determineModelYear(vin: string): ModelYearResult | null {
     const yearChar = vin[9].toUpperCase();
     const position7 = vin[6].charCodeAt(0); // don't need uppercase for digits check
+
+    // Handle '0' as a special case (used by some countries that don't encode model year)
+    if (yearChar === '0') {
+      return {
+        year: 0,
+        source: 'position',
+        confidence: 0,
+      };
+    }
 
     const index = modelYearCodes.indexOf(yearChar);
     if (index === -1) {

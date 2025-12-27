@@ -1,15 +1,17 @@
-import { VINDecoder, createDecoder, decodeVIN } from "../lib/index";
 import {
+  VINDecoder,
+  createDecoder,
+  decodeVIN,
+  BodyStyle,
   ErrorCode,
   ErrorCategory,
+  NativeDatabaseAdapter,
+  NativeDatabaseAdapterFactory,
+} from "../lib/index";
+import type {
   DecodeOptions,
   DecodeResult,
-  BodyStyle,
 } from "../lib/types";
-import {
-  NodeDatabaseAdapter,
-  NodeDatabaseAdapterFactory,
-} from "../lib/db/node-adapter";
 import {
   describe,
   it,
@@ -89,7 +91,7 @@ const INVALID_TEST_CASES = [
  * Helper to get an adapter for testing
  */
 async function getAdapter(): Promise<DatabaseAdapter> {
-  const factory = new NodeDatabaseAdapterFactory();
+  const factory = new NativeDatabaseAdapterFactory();
   return factory.createAdapter(TEST_DB_PATH);
 }
 

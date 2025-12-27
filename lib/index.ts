@@ -13,7 +13,7 @@ import type { DatabaseAdapter, QueryResult, DatabaseAdapterFactory } from './db/
 
 import { BrowserDatabaseAdapter, BrowserDatabaseAdapterFactory } from './db/browser-adapter';
 
-import { NodeDatabaseAdapter, NodeDatabaseAdapterFactory } from './db/node-adapter';
+import { NativeDatabaseAdapter, NativeDatabaseAdapterFactory } from './db/native-adapter';
 
 import { CloudflareD1Adapter, createD1Adapter } from './db/d1-adapter';
 
@@ -38,13 +38,12 @@ import type {
   LookupError,
   PatternError,
   DatabaseError,
-  ErrorCode,
-  ErrorCategory,
-  ErrorSeverity,
   Position,
   DiagnosticInfo,
-  BodyStyle,
 } from './types';
+
+// Enum imports
+import { BodyStyle, ErrorCode, ErrorCategory, ErrorSeverity } from './enums';
 
 // Logger
 import { createLogger } from './logger';
@@ -129,8 +128,8 @@ export async function createDecoder(config: DecoderConfig = {}): Promise<VINDeco
     }
     adapter = await globalThis.__D1_FACTORY(resolvedDbPath);
   } else {
-    // Node.js adapter
-    const factory = new NodeDatabaseAdapterFactory();
+    // Node.js native adapter
+    const factory = new NativeDatabaseAdapterFactory();
     adapter = await factory.createAdapter(resolvedDbPath);
   }
 
@@ -237,10 +236,10 @@ export async function quickDecode(vin: string, options: DecodeOptions = {}): Pro
  *
  * @example
  * ```typescript
- * import { decodeVIN, NodeDatabaseAdapterFactory } from '@crdg/corgi';
+ * import { decodeVIN, NativeDatabaseAdapterFactory } from '@crdg/corgi';
  *
  * // Initialize the adapter
- * const factory = new NodeDatabaseAdapterFactory();
+ * const factory = new NativeDatabaseAdapterFactory();
  * const adapter = await factory.createAdapter('/path/to/vpic.db');
  *
  * // Decode a VIN
@@ -309,21 +308,21 @@ export type {
   LookupError,
   PatternError,
   DatabaseError,
+  Position,
+  DiagnosticInfo,
+};
+
+// Export classes, enums and functions
+export {
   ErrorCode,
   ErrorCategory,
   ErrorSeverity,
-  Position,
-  DiagnosticInfo,
   BodyStyle,
-};
-
-// Export classes and functions
-export {
   VINDecoder,
   BrowserDatabaseAdapter,
   BrowserDatabaseAdapterFactory,
-  NodeDatabaseAdapter,
-  NodeDatabaseAdapterFactory,
+  NativeDatabaseAdapter,
+  NativeDatabaseAdapterFactory,
   CloudflareD1Adapter,
   createD1Adapter,
   createLogger,
