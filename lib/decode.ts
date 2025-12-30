@@ -149,6 +149,18 @@ export class VINDecoder {
         return result;
       }
 
+      // Handle VIN 10th digit '0' - some countries don't encode model year
+      if (modelYear.year === 0) {
+        result.errors.push({
+          code: ErrorCode.INVALID_MODEL_YEAR,
+          category: ErrorCategory.VALIDATION,
+          severity: ErrorSeverity.WARNING,
+          message: 'Model year position contains "0" - year information not encoded (common for non-US vehicles)',
+          positions: [9],
+          details: 'Some countries do not use position 10 for model year and set it to "0"',
+        } as ValidationError);
+      }
+
       result.components.modelYear = modelYear;
 
       // 4. Get WMI information
@@ -591,6 +603,15 @@ export class VINDecoder {
   private determineModelYear(vin: string): ModelYearResult | null {
     const yearChar = vin[9].toUpperCase();
     const position7 = vin[6].charCodeAt(0); // don't need uppercase for digits check
+
+    // Handle '0' - some countries don't encode model year
+    if (yearChar === '0') {
+      return {
+        year: 0,
+        source: 'position' as const,
+        confidence: 0,
+      };
+    }
 
     const index = modelYearCodes.indexOf(yearChar);
     if (index === -1) {
