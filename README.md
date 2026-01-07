@@ -1,84 +1,47 @@
-# 🐕 Corgi VIN Decoder
+# Corgi VIN Decoder
 
 <div align="center">
   <img src="./corgi.png" alt="Corgi - Fast VIN Decoder" width="200" height="200">
-  <br>
-  <strong>The fastest and most lightweight open-source VIN decoding library on the planet.</strong>
 </div>
 
-<div align="center">
+Fast, offline VIN decoding for Node.js, browsers, and Cloudflare Workers. Powered by the NHTSA VPIC database.
 
-[![CI](https://github.com/cardog-ai/corgi/workflows/CI/badge.svg)](https://github.com/cardog-ai/corgi/actions)
-[![codecov](https://codecov.io/gh/cardog-ai/corgi/branch/master/graph/badge.svg)](https://codecov.io/gh/cardog-ai/corgi)
 [![npm version](https://badge.fury.io/js/%40cardog%2Fcorgi.svg)](https://badge.fury.io/js/%40cardog%2Fcorgi)
-[![npm downloads](https://img.shields.io/npm/dm/@cardog/corgi.svg)](https://www.npmjs.com/package/@cardog/corgi)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC)
-[![GitHub stars](https://img.shields.io/github/stars/cardog-ai/corgi.svg?style=social)](https://github.com/cardog-ai/corgi)
 
-</div>
-
-Corgi is a blazing-fast, fully offline VIN decoder built with TypeScript. Powered by an optimized VPIC database, it delivers comprehensive vehicle information with zero network dependencies and lightning-fast performance across Node.js, browsers, and Cloudflare Workers.
-
-## ⚡ Performance First
-
-- **Fully Offline**: No API calls, no network dependencies, no rate limits
-- **Lightning Fast**: Optimized SQLite database with pattern-based decoding
-- **Tiny Footprint**: ~20MB compressed bundle with complete NHTSA dataset
-- **Zero Dependencies**: Self-contained with automatic database management
-- **Universal**: Works everywhere - Node.js, browsers, and edge computing
-
-## 🚀 Quick Start
+## Installation
 
 ```bash
 npm install @cardog/corgi
 ```
 
+## Quick Start
+
 ```typescript
 import { createDecoder } from "@cardog/corgi";
 
-// One-line VIN decoding - database auto-managed
 const decoder = await createDecoder();
 const result = await decoder.decode("KM8K2CAB4PU001140");
 
 console.log(result.components.vehicle);
-// {
-//   make: 'Hyundai',
-//   model: 'Kona',
-//   year: 2023,
-//   series: 'SE',
-//   bodyStyle: 'SUV',
-//   driveType: '4WD/4-Wheel Drive/4x4',
-//   fuelType: 'Gasoline',
-//   doors: '5'
-// }
+// { make: 'Hyundai', model: 'Kona', year: 2023, ... }
 
 await decoder.close();
 ```
 
-## 📋 What You Get
-
-Corgi extracts comprehensive vehicle information from any VIN:
-
-- **Vehicle Details**: Make, model, year, series, trim, body style
-- **Technical Specs**: Engine details, drivetrain, fuel type, doors
-- **Manufacturing**: Plant location, manufacturer, production details
-- **Quality Metrics**: Confidence scores and validation results
-- **Standards Compliance**: Full NHTSA VPIC dataset integration
-
-## 🏗️ Platform Support
+## Platform Support
 
 ### Node.js
 
 ```typescript
 import { createDecoder } from "@cardog/corgi";
 
-// Automatic database management - downloads and caches on first run
 const decoder = await createDecoder();
 const result = await decoder.decode("1HGCM82633A123456");
 
-// Or provide your own database path
-const customDecoder = await createDecoder({
+// Custom database path
+const decoder = await createDecoder({
   databasePath: "/path/to/vpic.lite.db",
 });
 ```
@@ -86,295 +49,252 @@ const customDecoder = await createDecoder({
 ### Browser
 
 ```typescript
-// Host the database file and provide the URL
-const browserDecoder = await createDecoder({
-  databasePath: "https://cdn.example.com/vpic.lite.db.gz",
+import { createDecoder } from "@cardog/corgi/browser";
+
+const decoder = await createDecoder({
+  databasePath: "https://corgi.cardog.io/vpic.lite.db.gz",
   runtime: "browser",
 });
 ```
 
-### Cloudflare Workers
+### Cloudflare Workers (D1)
 
 ```typescript
 import { createDecoder, initD1Adapter } from "@cardog/corgi";
 
-// Initialize D1 adapter with your binding
 initD1Adapter(env.D1_DATABASE);
 
-// Create decoder
 const decoder = await createDecoder({
   databasePath: "D1",
   runtime: "cloudflare",
 });
 ```
 
-## ⚙️ Configuration
-
-### Advanced Options
+## Configuration
 
 ```typescript
 const decoder = await createDecoder({
-  databasePath: "./custom/db/path.db", // Custom database location
-  forceFresh: true, // Force fresh database setup
+  databasePath: "./custom/path.db",
+  forceFresh: true,
   defaultOptions: {
-    includePatternDetails: true, // Pattern matching details
-    includeRawData: false, // Raw database records
-    confidenceThreshold: 0.8, // Confidence threshold (0-1)
-    includeDiagnostics: true, // Performance metrics
+    includePatternDetails: true,
+    includeRawData: false,
+    confidenceThreshold: 0.8,
+    includeDiagnostics: true,
   },
 });
 
-// Override options per decode
+// Per-decode options
 const result = await decoder.decode("VIN12345678901234", {
-  modelYear: 2024, // Override detected year
-  includePatternDetails: true, // Include pattern analysis
+  modelYear: 2024,
+  includePatternDetails: true,
 });
 ```
 
-### Quick Decode Helper
-
-```typescript
-import { quickDecode } from "@cardog/corgi";
-
-// One-line decoding with shared instance
-const result = await quickDecode("1HGCM82633A123456");
-```
-
-## 📊 Response Structure
+## Response Structure
 
 ```typescript
 interface DecodeResult {
-  vin: string; // Input VIN
-  valid: boolean; // Overall validation status
+  vin: string;
+  valid: boolean;
 
   components: {
     vehicle?: {
-      // Core vehicle information
-      make: string; // e.g., "Honda", "Toyota"
-      model: string; // e.g., "Civic", "Camry"
-      year: number; // Model year
-      series?: string; // Trim/series level
-      bodyStyle?: string; // "Sedan", "SUV", "Pickup"
-      driveType?: string; // "FWD", "AWD", "4WD"
-      fuelType?: string; // "Gasoline", "Electric"
-      doors?: string; // Number of doors
+      make: string;
+      model: string;
+      year: number;
+      series?: string;
+      bodyStyle?: string;
+      driveType?: string;
+      fuelType?: string;
+      doors?: string;
     };
-
     wmi?: {
-      // World Manufacturer Identifier
-      manufacturer: string; // Official manufacturer name
-      make: string; // Brand name
-      country: string; // Country of origin
-      region: string; // Geographic region
+      manufacturer: string;
+      make: string;
+      country: string;
+      region: string;
     };
-
     plant?: {
-      // Manufacturing details
-      country: string; // Production country
-      city?: string; // Production city
-      code: string; // Plant code
+      country: string;
+      city?: string;
+      code: string;
     };
-
     engine?: {
-      // Engine specifications
-      model?: string; // Engine model/code
-      cylinders?: string; // Cylinder count
-      displacement?: string; // Engine displacement
-      fuel?: string; // Fuel type
+      model?: string;
+      cylinders?: string;
+      displacement?: string;
+      fuel?: string;
     };
-
     modelYear?: {
-      // Year detection details
-      year: number; // Detected year
-      source: string; // Detection method
-      confidence: number; // Confidence score
+      year: number;
+      source: string;
+      confidence: number;
     };
-
     checkDigit?: {
-      // VIN validation
-      isValid: boolean; // Check digit validity
-      expected?: string; // Expected value
-      actual: string; // Actual value
+      isValid: boolean;
+      expected?: string;
+      actual: string;
     };
   };
 
-  errors: DecodeError[]; // Validation errors
-  metadata?: DiagnosticInfo; // Performance metrics
-  patterns?: PatternMatch[]; // Pattern details (optional)
+  errors: DecodeError[];
+  metadata?: DiagnosticInfo;
+  patterns?: PatternMatch[];
 }
 ```
 
-## 🚨 Error Handling
+## Error Handling
 
 ```typescript
-import { ErrorCode, ErrorCategory } from "@cardog/corgi";
+import { ErrorCode } from "@cardog/corgi";
 
 const result = await decoder.decode("INVALID_VIN");
 
 if (!result.valid) {
   result.errors.forEach((error) => {
-    console.log(`${error.category}: ${error.message}`);
-
-    // Handle specific error types
     switch (error.code) {
       case ErrorCode.INVALID_CHECK_DIGIT:
-        console.log(`Expected: ${error.expected}, Got: ${error.actual}`);
-        break;
       case ErrorCode.INVALID_LENGTH:
-        console.log("VIN must be exactly 17 characters");
-        break;
       case ErrorCode.WMI_NOT_FOUND:
-        console.log("Unknown manufacturer code");
-        break;
+        console.log(error.message);
     }
   });
 }
 ```
 
-## 🖥️ Command Line Interface
+## CLI
 
 ```bash
-# Quick VIN decode
 npx @cardog/corgi decode 1HGCM82633A123456
-
-# With options
-npx @cardog/corgi decode 1HGCM82633A123456 \
-  --patterns \
-  --year 2022 \
-  --format json
-
-# Custom database
-npx @cardog/corgi decode 1HGCM82633A123456 \
-  --database ./custom/vpic.lite.db
-
-# Help
+npx @cardog/corgi decode 1HGCM82633A123456 --patterns --format json
 npx @cardog/corgi --help
 ```
 
-## 💾 Database & Caching
+---
 
-### Automatic Database Management
+## Architecture
 
-Corgi uses an intelligent caching system to provide optimal performance:
+### VIN Structure
 
-```typescript
-// First run: Downloads, decompresses, and caches database
-const decoder = await createDecoder();
+A Vehicle Identification Number (VIN) is a 17-character identifier assigned to every vehicle manufactured for road use. The structure is defined by ISO 3779 and follows this format:
 
-// Subsequent runs: Uses cached database for instant startup
-const decoder2 = await createDecoder();
-
-// Force fresh download and cache refresh
-const freshDecoder = await createDecoder({ forceFresh: true });
+```
+Position:  1-3    4-8      9       10      11      12-17
+           WMI    VDS      Check   Year    Plant   VIS
+           │      │        │       │       │       │
+           │      │        │       │       │       └─ Sequential production number
+           │      │        │       │       └───────── Assembly plant code
+           │      │        │       └─────────────── Model year (A-Y, 1-9, excluding I,O,Q,U,Z,0)
+           │      │        └─────────────────────── Check digit (0-9, X)
+           │      └──────────────────────────────── Vehicle attributes (model, body, engine, etc.)
+           └─────────────────────────────────────── World Manufacturer Identifier
 ```
 
-### Cache Storage Locations
+**WMI (Positions 1-3)**: Identifies the manufacturer. First character indicates country/region, second indicates manufacturer, third indicates vehicle type or manufacturing division.
 
-- **Node.js**: `~/.corgi-cache/vpic.lite.db` (User home directory)
-- **Browser**: Database loaded from your provided URL
-- **Cloudflare**: Managed by D1 database service
+**VDS (Positions 4-8)**: Vehicle Descriptor Section. Manufacturer-defined attributes including model, body style, engine type, and restraint system.
 
-### Database Details
+**Check Digit (Position 9)**: Validates VIN integrity using a weighted algorithm. Required for all vehicles sold in North America.
 
-- **Source**: Official NHTSA VPIC dataset (updated automatically)
-- **Compressed Size**: ~20MB (vpic.lite.db.gz)
-- **Uncompressed Size**: ~40MB (vpic.lite.db)
-- **Update Frequency**: Monthly via automated pipeline
-- **Coverage**: Complete VIN database with optimized queries
+**Model Year (Position 10)**: Encodes the model year. Uses letters A-Y (excluding I, O, Q, U, Z) and digits 1-9 in a 30-year cycle.
 
-### Cache Management
+**Plant Code (Position 11)**: Identifies the assembly plant. Manufacturer-specific encoding.
+
+**VIS (Positions 12-17)**: Vehicle Identifier Section. Sequential production number unique within the model year and plant.
+
+### Check Digit Algorithm
+
+The check digit (position 9) is calculated by:
+
+1. Assigning each character a value (A=1, B=2, ..., N=5, P=7, ..., 0-9 = face value)
+2. Multiplying each position by a weight: `[8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2]`
+3. Summing all products and taking modulo 11
+4. Result 10 = 'X', otherwise the digit itself
+
+### Model Year Decoding
+
+Per 49 CFR 565.15, model year codes cycle every 30 years:
+
+| Code | Years |
+|------|-------|
+| A | 1980, 2010 |
+| B | 1981, 2011 |
+| ... | ... |
+| X | 1999, 2029 |
+| Y | 2000, 2030 |
+| 1 | 2001, 2031 |
+| ... | ... |
+| 9 | 2009, 2039 |
+
+Characters I, O, Q are excluded from all VIN positions. U, Z, and 0 are additionally excluded from position 10.
+
+---
+
+## Database
+
+### VPIC Lite
+
+Corgi uses an optimized subset of the NHTSA vPIC (Vehicle Product Information Catalog) database. The database is compressed and bundled with the package for offline operation.
+
+**Specifications:**
+- Source: NHTSA VPIC
+- Format: SQLite (optimized)
+- Compressed: ~20MB (gzip)
+- Uncompressed: ~40MB
+- Updates: Monthly via automated pipeline
+
+### Hosted Database
+
+Cardog maintains a public CDN with the latest VPIC database builds:
+
+**Base URL:** `https://corgi.cardog.io`
+
+| File | Description |
+|------|-------------|
+| `vpic.lite.db.gz` | Database (gzip) |
+| `vpic.lite.db.bz2` | Database (bzip2) |
+| `vpic.lite.db.xz` | Database (xz) |
+| `vpic.lite.db.zst` | Database (zstd) |
+| `vpic.lite.json` | Metadata (version, checksums, record counts) |
+| `vpic.lite.sha256` | SHA256 checksums |
+
+Dated archives are also available: `vpic_lite_YYYYMMDD.db.gz`
+
+### Local Cache
+
+- **Node.js**: `~/.corgi-cache/vpic.lite.db`
+- **Browser**: Loaded from provided URL
+- **Cloudflare**: Managed by D1
 
 ```typescript
 import { getDatabasePath } from "@cardog/corgi";
 
-// Get current cached database path
 const dbPath = await getDatabasePath();
-console.log(`Database cached at: ${dbPath}`);
-
-// Force cache refresh (useful after package updates)
-const decoder = await createDecoder({ forceFresh: true });
+const decoder = await createDecoder({ forceFresh: true }); // Force refresh
 ```
-
-## 🔬 Advanced Features
-
-### Pattern-Based Decoding
-
-```typescript
-const result = await decoder.decode("VIN12345678901234", {
-  includePatternDetails: true,
-  confidenceThreshold: 0.8,
-});
-
-// Analyze individual pattern matches
-result.patterns?.forEach((pattern) => {
-  console.log(`${pattern.element}: ${pattern.value} (${pattern.confidence})`);
-});
-
-// Overall decode confidence
-console.log(`Confidence: ${result.metadata?.confidence}`);
-```
-
-### Body Style Normalization
-
-```typescript
-import { BodyStyle } from "@cardog/corgi";
-
-// Automatic normalization to standard values
-console.log(BodyStyle.SUV); // "SUV"
-console.log(BodyStyle.SEDAN); // "Sedan"
-console.log(BodyStyle.PICKUP); // "Pickup"
-
-// Raw values like "Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)"
-// become clean "SUV"
-```
-
-### Performance Diagnostics
-
-```typescript
-const result = await decoder.decode("VIN12345678901234", {
-  includeDiagnostics: true,
-});
-
-console.log(`Processing time: ${result.metadata?.processingTime}ms`);
-console.log(`Schema version: ${result.metadata?.schemaVersion}`);
-```
-
-## 🤝 Contributing
-
-We welcome contributions from the automotive and developer communities! Corgi is built to be the fastest, most reliable VIN decoder available.
-
-### Quick Start
-
-```bash
-git clone https://github.com/cardog-ai/corgi.git
-cd corgi
-pnpm install
-pnpm approve-builds
-pnpm test
-```
-
-### Development Workflow
-
-- **Issues**: Report bugs or request features via GitHub Issues
-- **Pull Requests**: Fork, create a feature branch, and submit a PR
-- **Testing**: All changes must include tests and pass existing test suite
-- **Standards**: Follow existing TypeScript patterns and conventions
-
-### Database Updates
-
-The VPIC database is automatically maintained via CI/CD pipelines. Manual database updates are rarely needed, but documentation is available for contributors.
-
-### Community Guidelines
-
-- Be respectful and inclusive
-- Follow semantic versioning for changes
-- Write clear commit messages
-- Add tests for new functionality
 
 ---
 
-**Made with ❤️ by the automotive community**
+## Exports
 
-## 📄 License
+```typescript
+// Core
+import { createDecoder, quickDecode, getDatabasePath } from "@cardog/corgi";
+
+// Types
+import type { DecodeResult, DecodeOptions, DecoderConfig } from "@cardog/corgi";
+
+// Enums
+import { ErrorCode, ErrorCategory, BodyStyle } from "@cardog/corgi";
+
+// Adapters
+import { initD1Adapter } from "@cardog/corgi/d1-adapter";
+import { createDecoder } from "@cardog/corgi/browser";
+```
+
+---
+
+## License
 
 ISC License - see [LICENSE](LICENSE) for details.
