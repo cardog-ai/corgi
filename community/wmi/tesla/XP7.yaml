@@ -1,33 +1,35 @@
-# Tesla Shanghai (Gigafactory 3)
-# WMI: LRW - Assigned to Tesla Manufacturing Shanghai
+# Tesla Berlin (Gigafactory 4)
+# WMI: XP7 - Assigned to Tesla Manufacturing Brandenburg (Grünheide)
 #
 # VIN Structure (positions 4-9):
-#   4: Model (Y=Model Y, 3=Model 3)
+#   4: Model (Y=Model Y)
 #   5: Body Type / Restraints
 #   6: Battery / Drive Configuration
 #   7: Motor Type
 #   8: Reserved
 #   9: Check Digit (calculated)
+#
+# Note: Berlin currently only produces Model Y
 
-wmi: LRW
+wmi: XP7
 
 sources:
   - type: service_manual
     url: https://service.tesla.com
-    description: "Tesla Model 3/Y Service Manual - VIN Decoding Section"
+    description: "Tesla Model Y Service Manual - VIN Decoding Section"
   - type: regulatory
-    description: "China Ministry of Industry and Information Technology WMI Registration"
+    description: "German Kraftfahrt-Bundesamt (KBA) WMI Registration"
   - type: community
-    description: "Verified against 479 VINs from Cardog production database"
+    description: "Verified against VINs from Cardog production database"
 manufacturer: "TESLA, INC."
 make: Tesla
-country: CHINA
+country: GERMANY
 vehicle_type: Passenger Car
 years:
-  from: 2020
+  from: 2022
   to: null  # ongoing
 
-schema_name: "Tesla Schema for LRW (China) - Model 3/Y"
+schema_name: "Tesla Schema for XP7 (Germany) - Model Y"
 
 patterns:
   # === Position 4: Model ===
@@ -35,29 +37,16 @@ patterns:
     element: Model
     value: "Model Y"
 
-  - pattern: "3*****"
-    element: Model
-    value: "Model 3"
-
   # === Position 5: Body Type (Model Y) ===
   - pattern: "YA****"
     element: Body Class
-    value: "Hatchback/Liftback/Notchback"  # VPIC exact name
+    value: "Hatchback/Liftback/Notchback"
 
   - pattern: "YA****"
     element: Doors
     value: "5"
 
-  # === Position 5: Body Type (Model 3) ===
-  - pattern: "3E****"
-    element: Body Class
-    value: "Sedan/Saloon"  # VPIC exact name
-
-  - pattern: "3E****"
-    element: Doors
-    value: "4"
-
-  # === Position 5: Steering/Market (shared) ===
+  # === Position 5: Steering/Market ===
   - pattern: "*G****"
     element: Other Restraint System Info
     value: "Left Hand Drive (LHD)"
@@ -73,7 +62,7 @@ patterns:
 
   - pattern: "******"
     element: Electrification Level
-    value: "BEV (Battery Electric Vehicle)"  # VPIC exact name
+    value: "BEV (Battery Electric Vehicle)"
 
   # === Position 7: Motor Configuration ===
   - pattern: "***A**"
@@ -91,38 +80,30 @@ patterns:
   # === Position 7: Drive Type ===
   - pattern: "***A**"
     element: Drive Type
-    value: "RWD/Rear-Wheel Drive"  # VPIC exact name
+    value: "RWD/Rear-Wheel Drive"
 
   - pattern: "***B**"
     element: Drive Type
-    value: "AWD/All-Wheel Drive"  # VPIC exact name
+    value: "AWD/All-Wheel Drive"
 
   - pattern: "***F**"
     element: Drive Type
-    value: "AWD/All-Wheel Drive"  # VPIC exact name
+    value: "AWD/All-Wheel Drive"
 
-  # === Plant Information (all LRW = Shanghai) ===
+  # === Plant Information (all XP7 = Berlin/Grünheide) ===
   - pattern: "******"
     element: Plant City
-    value: "SHANGHAI"
+    value: "GRUENHEIDE"
 
   - pattern: "******"
     element: Plant Country
-    value: "CHINA"
+    value: "GERMANY"
 
-# Validation VINs (for testing)
+# Validation VINs (from production database)
 test_vins:
-  - vin: "LRW3E7FA6NC544804"
-    expected:
-      make: Tesla
-      model: Model 3
-      body_class: Sedan
-      drive_type: RWD
-      year: 2022
-
-  - vin: "LRWYGCFS4PC123456"
+  - vin: "XP7YGDEE6TB729697"
     expected:
       make: Tesla
       model: Model Y
       body_class: Hatchback
-      year: 2023
+      year: 2024

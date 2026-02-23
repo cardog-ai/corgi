@@ -1,85 +1,98 @@
 # Community VIN Pattern Schema
 
-This document defines the YAML schema for contributing VIN patterns to corgi.
+Quick reference for the YAML schema used in community VIN pattern contributions.
 
-## Overview
+**For full contribution guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md).**
 
-Contributors write simple YAML files describing WMI codes and their VIN decoding patterns. A build tool transforms these into VPIC-compatible SQL that gets merged into the database.
-
-## Directory Structure
+## File Structure
 
 ```
 community/
-├── schema.md           # This file
+├── CONTRIBUTING.md     # Full contribution guidelines
+├── schema.md           # This file (quick reference)
 ├── wmi/
 │   ├── tesla/
 │   │   ├── LRW.yaml    # Tesla Shanghai
-│   │   ├── XP7.yaml    # Tesla Berlin
-│   │   └── 7SA.yaml    # Tesla Austin (supplement)
+│   │   └── XP7.yaml    # Tesla Berlin
 │   ├── byd/
-│   │   └── LFV.yaml    # BYD China
-│   └── ...
+│   │   └── LFV.yaml    # BYD China (example)
+│   └── {make}/
+│       └── {WMI}.yaml
 └── build/
     ├── generate.ts     # YAML → SQL generator
-    └── validate.ts     # Schema validation
+    └── test-decode.ts  # Test utility
 ```
 
-## YAML Schema
-
-### Top-Level Fields
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `wmi` | Yes | 3-character WMI code |
-| `manufacturer` | Yes | Manufacturer name (must match existing or define new) |
-| `make` | Yes | Make name (must match existing or define new) |
-| `country` | Yes | Country name (must match existing) |
-| `vehicle_type` | Yes | Vehicle type (Passenger Car, MPV, Truck, etc.) |
-| `years` | Yes | Year range this schema applies to |
-| `schema_name` | No | Custom schema name (auto-generated if omitted) |
-| `patterns` | Yes | VIN decoding patterns |
-
-### Pattern Positions
-
-VIN positions 4-9 (VDS) are represented as a 6-character pattern:
-- Position 4: Character 1 in pattern
-- Position 5: Character 2 in pattern
-- ...
-- Position 9: Character 6 in pattern
-
-Use `*` for wildcard (any character matches).
-
-### Pattern Elements
-
-Each pattern maps a position pattern to an element value:
+## YAML Schema (Quick Reference)
 
 ```yaml
-patterns:
-  - pattern: "Y*****"    # Position 4 = Y
-    element: Model
-    value: "Model Y"
+wmi: LRW                          # Required: 3-char WMI code
+manufacturer: "TESLA, INC."       # Required: Exact VPIC name
+make: Tesla                       # Required: Exact VPIC name
+country: CHINA                    # Required: Exact VPIC name
+vehicle_type: Passenger Car       # Required: Exact VPIC name
+years:
+  from: 2020                      # Required: Start year
+  to: null                        # Optional: End year (null = ongoing)
 
-  - pattern: "*G****"    # Position 5 = G
-    element: Body Class
-    value: "Hatchback"
+sources:                          # Required: Documentation sources
+  - type: service_manual
+    url: https://...
+    description: "..."
+
+patterns:                         # Required: Decoding patterns
+  - pattern: "Y*****"             # 6-char pattern (* = wildcard)
+    element: Model                # VPIC Element name
+    value: "Model Y"              # Decoded value
+
+test_vins:                        # Required: At least 3 VINs
+  - vin: "LRWYGDEE1PC010116"
+    expected:
+      make: Tesla
+      model: Model Y
+      year: 2023
 ```
 
-### Supported Elements
+## Pattern Syntax
 
-| Element | Description | Lookup Table |
-|---------|-------------|--------------|
-| `Model` | Vehicle model name | Model |
-| `Body Class` | Body style | BodyStyle |
-| `Doors` | Number of doors | (literal) |
-| `Drive Type` | AWD, FWD, RWD | DriveType |
-| `Fuel Type - Primary` | Electric, Gas, etc. | FuelType |
-| `Electrification Level` | BEV, PHEV, HEV | ElectrificationLevel |
-| `Transmission` | Auto, Manual | Transmission |
-| `Plant City` | Assembly plant city | (literal) |
-| `Plant Country` | Assembly country | Country |
-| `Other Engine Info` | Motor configuration | (literal) |
-| `Other Restraint System Info` | Restraint details | (literal) |
+| Pattern | Matches | Example |
+|---------|---------|---------|
+| `Y*****` | Position 4 = Y | Model indicator |
+| `*G****` | Position 5 = G | Steering/market |
+| `***A**` | Position 7 = A | Motor type |
+| `******` | All positions | Universal (fuel type, plant) |
 
-## Example: Tesla Shanghai (LRW)
+## Validation Commands
 
-See `wmi/tesla/LRW.yaml` for a complete example.
+```bash
+# Generate SQL
+npx tsx community/build/generate.ts community/wmi/tesla/LRW.yaml
+
+# Test decode
+cp db/vpic.lite.db db/vpic.community-test.db
+npx tsx community/build/generate.ts community/wmi/tesla/LRW.yaml | sqlite3 db/vpic.community-test.db
+npx tsx community/build/test-decode.ts LRWYGDEE1PC010116 --db db/vpic.community-test.db
+
+# Run tests
+pnpm test -t "Community"
+```
+
+## Common Lookup Values
+
+```bash
+# Body styles
+sqlite3 db/vpic.lite.db "SELECT Name FROM BodyStyle WHERE Name LIKE '%Sedan%' OR Name LIKE '%Hatch%';"
+# → Sedan/Saloon, Hatchback/Liftback/Notchback
+
+# Drive types
+sqlite3 db/vpic.lite.db "SELECT Name FROM DriveType;"
+# → AWD/All-Wheel Drive, RWD/Rear-Wheel Drive, FWD/Front-Wheel Drive
+
+# Fuel types (electric)
+sqlite3 db/vpic.lite.db "SELECT Name FROM FuelType WHERE Name LIKE '%Elec%';"
+# → Electric
+
+# Electrification levels
+sqlite3 db/vpic.lite.db "SELECT Name FROM ElectrificationLevel;"
+# → BEV (Battery Electric Vehicle), PHEV (Plug-in Hybrid Electric Vehicle), ...
+```
