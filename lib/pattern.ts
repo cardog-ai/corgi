@@ -423,17 +423,42 @@ export class PatternMatcher {
       matchesByElement[element].push(match);
     });
 
+    // Count patterns per schema (excluding Model patterns) for VIN coherence scoring
+    // A schema with more non-model patterns matching suggests better overall VIN coherence
+    const schemaPatternCount: Record<string, number> = {};
+    transformedMatches.forEach(match => {
+      if (match.element !== 'Model') {
+        const schema = match.schema;
+        schemaPatternCount[schema] = (schemaPatternCount[schema] || 0) + 1;
+      }
+    });
+
     // For each element type, sort by weight and then filter duplicates
     let result: PatternMatch[] = [];
 
     for (const [element, matches] of Object.entries(matchesByElement)) {
-      // Sort by elementWeight first, then by confidence
+      // Three-tier sorting:
+      // 1. Primary: elementWeight (higher first)
+      // 2. Secondary: schema pattern count (higher first) - VIN coherence
+      // 3. Tertiary: model-specific confidence (higher first)
       const sortedMatches = matches.sort((a, b) => {
         const weightA = a.metadata?.elementWeight ?? 0;
         const weightB = b.metadata?.elementWeight ?? 0;
+
+        // Primary: elementWeight
         if (weightA !== weightB) {
           return weightB - weightA;
         }
+
+        // Secondary: schema pattern count (VIN coherence)
+        // More patterns from the same schema = better overall match
+        const schemaCountA = schemaPatternCount[a.schema] || 0;
+        const schemaCountB = schemaPatternCount[b.schema] || 0;
+        if (schemaCountA !== schemaCountB) {
+          return schemaCountB - schemaCountA;
+        }
+
+        // Tertiary: confidence score
         return b.confidence - a.confidence;
       });
 
