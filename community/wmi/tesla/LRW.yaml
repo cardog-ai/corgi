@@ -1,0 +1,120 @@
+# Tesla Shanghai (Gigafactory 3)
+# WMI: LRW - Assigned to Tesla Manufacturing Shanghai
+# Source: Tesla Service Manual, community verification
+#
+# VIN Structure (positions 4-9):
+#   4: Model (Y=Model Y, 3=Model 3)
+#   5: Body Type / Restraints
+#   6: Battery / Drive Configuration
+#   7: Motor Type
+#   8: Reserved
+#   9: Check Digit (calculated)
+
+wmi: LRW
+manufacturer: "TESLA, INC."
+make: Tesla
+country: CHINA
+vehicle_type: Passenger Car
+years:
+  from: 2020
+  to: null  # ongoing
+
+schema_name: "Tesla Schema for LRW (China) - Model 3/Y"
+
+patterns:
+  # === Position 4: Model ===
+  - pattern: "Y*****"
+    element: Model
+    value: "Model Y"
+
+  - pattern: "3*****"
+    element: Model
+    value: "Model 3"
+
+  # === Position 5: Body Type (Model Y) ===
+  - pattern: "YA****"
+    element: Body Class
+    value: "Hatchback/Liftback/Notchback"  # VPIC exact name
+
+  - pattern: "YA****"
+    element: Doors
+    value: "5"
+
+  # === Position 5: Body Type (Model 3) ===
+  - pattern: "3E****"
+    element: Body Class
+    value: "Sedan/Saloon"  # VPIC exact name
+
+  - pattern: "3E****"
+    element: Doors
+    value: "4"
+
+  # === Position 5: Steering/Market (shared) ===
+  - pattern: "*G****"
+    element: Other Restraint System Info
+    value: "Left Hand Drive (LHD)"
+
+  - pattern: "*H****"
+    element: Other Restraint System Info
+    value: "Right Hand Drive (RHD)"
+
+  # === Fuel Type (all Tesla = Electric) ===
+  - pattern: "******"
+    element: Fuel Type - Primary
+    value: "Electric"
+
+  - pattern: "******"
+    element: Electrification Level
+    value: "BEV (Battery Electric Vehicle)"  # VPIC exact name
+
+  # === Position 7: Motor Configuration ===
+  - pattern: "***A**"
+    element: Other Engine Info
+    value: "Single Motor - Standard Range"
+
+  - pattern: "***B**"
+    element: Other Engine Info
+    value: "Dual Motor - Long Range"
+
+  - pattern: "***F**"
+    element: Other Engine Info
+    value: "Dual Motor - Performance"
+
+  # === Position 7: Drive Type ===
+  - pattern: "***A**"
+    element: Drive Type
+    value: "RWD/Rear-Wheel Drive"  # VPIC exact name
+
+  - pattern: "***B**"
+    element: Drive Type
+    value: "AWD/All-Wheel Drive"  # VPIC exact name
+
+  - pattern: "***F**"
+    element: Drive Type
+    value: "AWD/All-Wheel Drive"  # VPIC exact name
+
+  # === Plant Information (all LRW = Shanghai) ===
+  - pattern: "******"
+    element: Plant City
+    value: "SHANGHAI"
+
+  - pattern: "******"
+    element: Plant Country
+    value: "CHINA"
+
+# Validation VINs (for testing)
+test_vins:
+  - vin: "LRW3E7FA6NC544804"
+    expected:
+      make: Tesla
+      model: Model 3
+      body_class: Sedan
+      drive_type: RWD
+      year: 2022
+
+  - vin: "LRWYGCFS4PC123456"
+    expected:
+      make: Tesla
+      model: Model Y
+      body_class: Hatchback
+      year: 2023
