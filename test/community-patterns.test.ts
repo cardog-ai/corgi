@@ -88,7 +88,10 @@ const TESLA_AUSTIN_MODEL_X = [
   "7SAXCDE5XNF343136",
 ];
 
-const TESLA_BERLIN_MODEL_Y = ["XP7YGDEE6TB729697"];
+const TESLA_BERLIN_MODEL_Y = [
+  "XP7YGDEE6TB729697",
+  // Add more XP7 VINs as they become available in production DB
+];
 
 describe("Community Patterns", () => {
   // =========================================================================
@@ -242,6 +245,37 @@ describe("Community Patterns", () => {
         }
       );
     });
+
+    describe("XP7 (Tesla Berlin) Model Y", () => {
+      it.skipIf(!dbExists)(
+        "should decode Model Y VINs correctly",
+        async () => {
+          for (const vin of TESLA_BERLIN_MODEL_Y) {
+            const result = await decoder.decode(vin);
+
+            expect(result.valid).toBe(true);
+            expect(result.components?.wmi?.code).toBe("XP7");
+            expect(result.components?.wmi?.make).toBe("Tesla");
+            expect(result.components?.wmi?.country).toBe("GERMANY");
+
+            // Check patterns resolved
+            const model = result.patterns?.find((p) => p.element === "Model");
+            expect(model?.value).toBe("Model Y");
+
+            const bodyClass = result.patterns?.find(
+              (p) => p.element === "Body Class"
+            );
+            expect(bodyClass?.value).toContain("Hatchback");
+
+            // Check plant info
+            const plantCity = result.patterns?.find(
+              (p) => p.element === "Plant City"
+            );
+            expect(plantCity?.value).toBe("GRUENHEIDE");
+          }
+        }
+      );
+    });
   });
 });
 
@@ -281,6 +315,22 @@ describe("Community Pattern Generator", () => {
     );
 
     // Should not have any unresolved placeholders
+    expect(result).not.toContain("__NEW_");
+  });
+
+  it("should generate valid SQL for XP7 (Berlin)", async () => {
+    const { execSync } = await import("child_process");
+    const result = execSync(
+      "npx tsx community/build/generate.ts community/wmi/tesla/XP7.yaml 2>&1",
+      { encoding: "utf-8" }
+    );
+
+    // Should contain required inserts
+    expect(result).toContain("INSERT INTO Wmi");
+    expect(result).toContain("'XP7'");
+    expect(result).toContain("Tesla");
+    expect(result).toContain("GERMANY");
+    expect(result).toContain("GRUENHEIDE");
     expect(result).not.toContain("__NEW_");
   });
 });
