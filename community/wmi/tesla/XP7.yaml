@@ -15,93 +15,93 @@ wmi: XP7
 
 sources:
   - type: service_manual
-    url: https://service.tesla.com
-    description: "Tesla Model Y Service Manual - VIN Decoding Section"
+    url: https://service.tesla.com/docs/ModelY/ServiceManual/en-us/GUID-0C797294-574D-4EE4-8017-C339A7D58411.html
+    description: 'Tesla Model Y Service Manual - VIN Decoding Section'
   - type: regulatory
-    description: "German Kraftfahrt-Bundesamt (KBA) WMI Registration"
+    description: 'German Kraftfahrt-Bundesamt (KBA) WMI Registration'
   - type: community
-    description: "Verified against VINs from Cardog production database"
-manufacturer: "TESLA, INC."
+    description: 'Verified against VINs from Cardog production database'
+manufacturer: 'TESLA, INC.'
 make: Tesla
 country: GERMANY
 vehicle_type: Passenger Car
 years:
   from: 2022
-  to: null  # ongoing
+  to: null # ongoing
 
-schema_name: "Tesla Schema for XP7 (Germany) - Model Y"
+schema_name: 'Tesla Schema for XP7 (Germany) - Model Y'
 
 patterns:
   # === Position 4: Model ===
-  - pattern: "Y*****"
+  - pattern: 'Y*****'
     element: Model
-    value: "Model Y"
+    value: 'Model Y'
 
   # === Position 5: Body Type (Model Y) ===
-  - pattern: "YA****"
+  - pattern: 'YA****'
     element: Body Class
-    value: "Hatchback/Liftback/Notchback"
+    value: 'Hatchback/Liftback/Notchback'
 
-  - pattern: "YA****"
+  - pattern: 'YA****'
     element: Doors
-    value: "5"
+    value: '5'
 
   # === Position 5: Steering/Market ===
-  - pattern: "*G****"
+  - pattern: '*G****'
     element: Other Restraint System Info
-    value: "Left Hand Drive (LHD)"
+    value: 'Left Hand Drive (LHD)'
 
-  - pattern: "*H****"
+  - pattern: '*H****'
     element: Other Restraint System Info
-    value: "Right Hand Drive (RHD)"
+    value: 'Right Hand Drive (RHD)'
 
   # === Fuel Type (all Tesla = Electric) ===
-  - pattern: "******"
+  - pattern: '******'
     element: Fuel Type - Primary
-    value: "Electric"
+    value: 'Electric'
 
-  - pattern: "******"
+  - pattern: '******'
     element: Electrification Level
-    value: "BEV (Battery Electric Vehicle)"
+    value: 'BEV (Battery Electric Vehicle)'
 
   # === Position 7: Motor Configuration ===
-  - pattern: "***A**"
+  - pattern: '***A**'
     element: Other Engine Info
-    value: "Single Motor - Standard Range"
+    value: 'Single Motor - Standard Range'
 
-  - pattern: "***B**"
+  - pattern: '***B**'
     element: Other Engine Info
-    value: "Dual Motor - Long Range"
+    value: 'Dual Motor - Long Range'
 
-  - pattern: "***F**"
+  - pattern: '***F**'
     element: Other Engine Info
-    value: "Dual Motor - Performance"
+    value: 'Dual Motor - Performance'
 
   # === Position 7: Drive Type ===
-  - pattern: "***A**"
+  - pattern: '***A**'
     element: Drive Type
-    value: "RWD/Rear-Wheel Drive"
+    value: 'RWD/Rear-Wheel Drive'
 
-  - pattern: "***B**"
+  - pattern: '***B**'
     element: Drive Type
-    value: "AWD/All-Wheel Drive"
+    value: 'AWD/All-Wheel Drive'
 
-  - pattern: "***F**"
+  - pattern: '***F**'
     element: Drive Type
-    value: "AWD/All-Wheel Drive"
+    value: 'AWD/All-Wheel Drive'
 
   # === Plant Information (all XP7 = Berlin/Grünheide) ===
-  - pattern: "******"
+  - pattern: '******'
     element: Plant City
-    value: "GRUENHEIDE"
+    value: 'GRUENHEIDE'
 
-  - pattern: "******"
+  - pattern: '******'
     element: Plant Country
-    value: "GERMANY"
+    value: 'GERMANY'
 
 # Validation VINs (from production database)
 test_vins:
-  - vin: "XP7YGDEE6TB729697"
+  - vin: 'XP7YGDEE6TB729697'
     expected:
       make: Tesla
       model: Model Y
