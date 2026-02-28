@@ -20,3 +20,6 @@ dist/*
 
 # Ignore node_modules
 node_modules/
+
+# Claude session files
+.claude/

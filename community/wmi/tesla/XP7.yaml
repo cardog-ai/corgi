@@ -1,0 +1,109 @@
+# Tesla Berlin (Gigafactory 4)
+# WMI: XP7 - Assigned to Tesla Manufacturing Brandenburg (Grünheide)
+#
+# VIN Structure (positions 4-9):
+#   4: Model (Y=Model Y)
+#   5: Body Type / Restraints
+#   6: Battery / Drive Configuration
+#   7: Motor Type
+#   8: Reserved
+#   9: Check Digit (calculated)
+#
+# Note: Berlin currently only produces Model Y
+
+wmi: XP7
+
+sources:
+  - type: service_manual
+    url: https://service.tesla.com/docs/ModelY/ServiceManual/en-us/GUID-0C797294-574D-4EE4-8017-C339A7D58411.html
+    description: 'Tesla Model Y Service Manual - VIN Decoding Section'
+  - type: regulatory
+    description: 'German Kraftfahrt-Bundesamt (KBA) WMI Registration'
+  - type: community
+    description: 'Verified against VINs from Cardog production database'
+manufacturer: 'TESLA, INC.'
+make: Tesla
+country: GERMANY
+vehicle_type: Passenger Car
+years:
+  from: 2022
+  to: null # ongoing
+
+schema_name: 'Tesla Schema for XP7 (Germany) - Model Y'
+
+patterns:
+  # === Position 4: Model ===
+  - pattern: 'Y*****'
+    element: Model
+    value: 'Model Y'
+
+  # === Position 5: Body Type (Model Y) ===
+  - pattern: 'YA****'
+    element: Body Class
+    value: 'Hatchback/Liftback/Notchback'
+
+  - pattern: 'YA****'
+    element: Doors
+    value: '5'
+
+  # === Position 5: Steering/Market ===
+  - pattern: '*G****'
+    element: Other Restraint System Info
+    value: 'Left Hand Drive (LHD)'
+
+  - pattern: '*H****'
+    element: Other Restraint System Info
+    value: 'Right Hand Drive (RHD)'
+
+  # === Fuel Type (all Tesla = Electric) ===
+  - pattern: '******'
+    element: Fuel Type - Primary
+    value: 'Electric'
+
+  - pattern: '******'
+    element: Electrification Level
+    value: 'BEV (Battery Electric Vehicle)'
+
+  # === Position 7: Motor Configuration ===
+  - pattern: '***A**'
+    element: Other Engine Info
+    value: 'Single Motor - Standard Range'
+
+  - pattern: '***B**'
+    element: Other Engine Info
+    value: 'Dual Motor - Long Range'
+
+  - pattern: '***F**'
+    element: Other Engine Info
+    value: 'Dual Motor - Performance'
+
+  # === Position 7: Drive Type ===
+  - pattern: '***A**'
+    element: Drive Type
+    value: 'RWD/Rear-Wheel Drive'
+
+  - pattern: '***B**'
+    element: Drive Type
+    value: 'AWD/All-Wheel Drive'
+
+  - pattern: '***F**'
+    element: Drive Type
+    value: 'AWD/All-Wheel Drive'
+
+  # === Plant Information (all XP7 = Berlin/Grünheide) ===
+  - pattern: '******'
+    element: Plant City
+    value: 'GRUENHEIDE'
+
+  - pattern: '******'
+    element: Plant Country
+    value: 'GERMANY'
+
+# Validation VINs (from production database)
+test_vins:
+  - vin: 'XP7YGDEE6TB729697'
+    expected:
+      make: Tesla
+      model: Model Y
+      body_class: Hatchback
+      year: 2024
