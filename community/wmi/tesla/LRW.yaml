@@ -110,19 +110,27 @@ patterns:
     element: Plant Country
     value: 'CHINA'
 
-# Validation VINs (for testing)
+# Validation VINs (from production database)
 test_vins:
-  - vin: 'LRW3E7FA6NC544804'
+  - vin: 'LRW3E1EB0PC932736'
     expected:
       make: Tesla
       model: Model 3
       body_class: Sedan
-      drive_type: RWD
-      year: 2022
+      year: 2023
 
-  - vin: 'LRWYGCFS4PC123456'
+  - vin: 'LRWYGDEE1PC010116'
     expected:
       make: Tesla
       model: Model Y
       body_class: Hatchback
+      drive_type: RWD
+      year: 2023
+
+  - vin: 'LRWYGDEF4PC266095'
+    expected:
+      make: Tesla
+      model: Model Y
+      body_class: Hatchback
+      drive_type: AWD
       year: 2023
