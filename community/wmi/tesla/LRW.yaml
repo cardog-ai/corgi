@@ -1,24 +1,28 @@
 # Tesla Shanghai (Gigafactory 3)
 # WMI: LRW - Assigned to Tesla Manufacturing Shanghai
 #
-# VIN Structure (positions 4-9):
-#   4: Model (Y=Model Y, 3=Model 3)
-#   5: Body Type / Restraints
-#   6: Battery / Drive Configuration
-#   7: Motor Type
-#   8: Reserved
-#   9: Check Digit (calculated)
+# VIN Structure (positions 4-8 = VDS pattern positions 0-4):
+#   4 (p0): Model - Y=Model Y, 3=Model 3
+#   5 (p1): Body Type - G=Class D MPV 5DR LHD, H=RHD
+#   6 (p2): Restraints - A/B/C/D (seatbelt/airbag config)
+#   7 (p3): Fuel/Battery - E=Ternary Li-ion, F=LFP
+#   8 (p4): Motor/Drive - D/E/F/J/K/L/R/S
+#   9 (p5): Check Digit
+#
+# Source: Tesla MY2025 VIN Decoder, NHTSA FMVSS 565 submission
 
 wmi: LRW
 
 sources:
+  - type: regulatory
+    url: https://vpic.nhtsa.dot.gov/
+    description: 'Tesla FMVSS 565 submission to NHTSA'
   - type: service_manual
     url: https://service.tesla.com/docs/ModelY/ServiceManual/en-us/GUID-0C797294-574D-4EE4-8017-C339A7D58411.html
     description: 'Tesla Model 3/Y Service Manual - VIN Decoding Section'
-  - type: regulatory
-    description: 'China Ministry of Industry and Information Technology WMI Registration'
   - type: community
     description: 'Verified against 479 VINs from Cardog production database'
+
 manufacturer: 'TESLA, INC.'
 make: Tesla
 country: CHINA
@@ -30,7 +34,7 @@ years:
 schema_name: 'Tesla Schema for LRW (China) - Model 3/Y'
 
 patterns:
-  # === Position 4: Model ===
+  # === Position 4 (p0): Model ===
   - pattern: 'Y*****'
     element: Model
     value: 'Model Y'
@@ -39,25 +43,32 @@ patterns:
     element: Model
     value: 'Model 3'
 
-  # === Position 5: Body Type (Model Y) ===
-  - pattern: 'YA****'
+  # === Position 5 (p1): Body Type ===
+  - pattern: 'YG****'
     element: Body Class
-    value: 'Hatchback/Liftback/Notchback' # VPIC exact name
+    value: 'Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)'
 
-  - pattern: 'YA****'
+  - pattern: 'YH****'
+    element: Body Class
+    value: 'Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)'
+
+  - pattern: 'YG****'
     element: Doors
     value: '5'
 
-  # === Position 5: Body Type (Model 3) ===
+  - pattern: 'YH****'
+    element: Doors
+    value: '5'
+
   - pattern: '3E****'
     element: Body Class
-    value: 'Sedan/Saloon' # VPIC exact name
+    value: 'Sedan/Saloon'
 
   - pattern: '3E****'
     element: Doors
     value: '4'
 
-  # === Position 5: Steering/Market (shared) ===
+  # === Position 5 (p1): Steering/Market ===
   - pattern: '*G****'
     element: Other Restraint System Info
     value: 'Left Hand Drive (LHD)'
@@ -66,6 +77,154 @@ patterns:
     element: Other Restraint System Info
     value: 'Right Hand Drive (RHD)'
 
+  # === Position 7 (p3): Battery Type (stored as Other Engine Info) ===
+  - pattern: '***E**'
+    element: Other Engine Info
+    value: 'Ternary System Li-ion Battery (NCA/NCM)'
+
+  - pattern: '***F**'
+    element: Other Engine Info
+    value: 'Lithium Iron Phosphate Battery (LFP)'
+
+  # === Position 8 (p4): Motor/Drive Unit - THIS DETERMINES TRIM ===
+  # Model Y variants
+  - pattern: 'Y***D*'
+    element: Trim
+    value: 'Standard Range'
+
+  - pattern: 'Y***E*'
+    element: Trim
+    value: 'Long Range'
+
+  - pattern: 'Y***F*'
+    element: Trim
+    value: 'Performance'
+
+  - pattern: 'Y***J*'
+    element: Trim
+    value: 'Standard Range'
+
+  - pattern: 'Y***K*'
+    element: Trim
+    value: 'Long Range'
+
+  - pattern: 'Y***L*'
+    element: Trim
+    value: 'Performance'
+
+  - pattern: 'Y***R*'
+    element: Trim
+    value: 'Standard Range'
+
+  - pattern: 'Y***S*'
+    element: Trim
+    value: 'Standard Range'
+
+  # Model 3 variants
+  - pattern: '3***A*'
+    element: Trim
+    value: 'Standard Range Plus'
+
+  - pattern: '3***B*'
+    element: Trim
+    value: 'Long Range'
+
+  - pattern: '3***T*'
+    element: Trim
+    value: 'Performance'
+
+  # === Position 8 (p4): Drive Type ===
+  - pattern: '****D*'
+    element: Drive Type
+    value: 'RWD/Rear-Wheel Drive'
+
+  - pattern: '****E*'
+    element: Drive Type
+    value: 'AWD/All-Wheel Drive'
+
+  - pattern: '****F*'
+    element: Drive Type
+    value: 'AWD/All-Wheel Drive'
+
+  - pattern: '****J*'
+    element: Drive Type
+    value: 'RWD/Rear-Wheel Drive'
+
+  - pattern: '****K*'
+    element: Drive Type
+    value: 'AWD/All-Wheel Drive'
+
+  - pattern: '****L*'
+    element: Drive Type
+    value: 'AWD/All-Wheel Drive'
+
+  - pattern: '****R*'
+    element: Drive Type
+    value: 'RWD/Rear-Wheel Drive'
+
+  - pattern: '****S*'
+    element: Drive Type
+    value: 'RWD/Rear-Wheel Drive'
+
+  # Model 3 specific drive types
+  - pattern: '****A*'
+    element: Drive Type
+    value: 'RWD/Rear-Wheel Drive'
+
+  - pattern: '****B*'
+    element: Drive Type
+    value: 'AWD/All-Wheel Drive'
+
+  - pattern: '****T*'
+    element: Drive Type
+    value: 'AWD/All-Wheel Drive'
+
+  # === Position 8 (p4): Motor Configuration ===
+  - pattern: '****D*'
+    element: Other Engine Info
+    value: 'Single Motor - Standard'
+
+  - pattern: '****E*'
+    element: Other Engine Info
+    value: 'Dual Motor - Standard'
+
+  - pattern: '****F*'
+    element: Other Engine Info
+    value: 'Dual Motor - Performance'
+
+  - pattern: '****J*'
+    element: Other Engine Info
+    value: 'Single Motor - Standard'
+
+  - pattern: '****K*'
+    element: Other Engine Info
+    value: 'Dual Motor - Standard'
+
+  - pattern: '****L*'
+    element: Other Engine Info
+    value: 'Dual Motor - Performance'
+
+  - pattern: '****R*'
+    element: Other Engine Info
+    value: 'Single Motor - Standard'
+
+  - pattern: '****S*'
+    element: Other Engine Info
+    value: 'Single Motor - Standard'
+
+  # Model 3 motor configs
+  - pattern: '****A*'
+    element: Other Engine Info
+    value: 'Single Motor - Standard/Performance'
+
+  - pattern: '****B*'
+    element: Other Engine Info
+    value: 'Dual Motor - Standard'
+
+  - pattern: '****T*'
+    element: Other Engine Info
+    value: 'Dual Motor - Performance'
+
   # === Fuel Type (all Tesla = Electric) ===
   - pattern: '******'
     element: Fuel Type - Primary
@@ -73,33 +232,7 @@ patterns:
 
   - pattern: '******'
     element: Electrification Level
-    value: 'BEV (Battery Electric Vehicle)' # VPIC exact name
-
-  # === Position 7: Motor Configuration ===
-  - pattern: '***A**'
-    element: Other Engine Info
-    value: 'Single Motor - Standard Range'
-
-  - pattern: '***B**'
-    element: Other Engine Info
-    value: 'Dual Motor - Long Range'
-
-  - pattern: '***F**'
-    element: Other Engine Info
-    value: 'Dual Motor - Performance'
-
-  # === Position 7: Drive Type ===
-  - pattern: '***A**'
-    element: Drive Type
-    value: 'RWD/Rear-Wheel Drive' # VPIC exact name
-
-  - pattern: '***B**'
-    element: Drive Type
-    value: 'AWD/All-Wheel Drive' # VPIC exact name
-
-  - pattern: '***F**'
-    element: Drive Type
-    value: 'AWD/All-Wheel Drive' # VPIC exact name
+    value: 'BEV (Battery Electric Vehicle)'
 
   # === Plant Information (all LRW = Shanghai) ===
   - pattern: '******'
@@ -123,14 +256,14 @@ test_vins:
     expected:
       make: Tesla
       model: Model Y
-      body_class: Hatchback
-      drive_type: RWD
+      trim: Long Range
+      drive_type: AWD
       year: 2023
 
-  - vin: 'LRWYGDEF4PC266095'
+  - vin: 'LRWYGDFD5RC639046'
     expected:
       make: Tesla
       model: Model Y
-      body_class: Hatchback
-      drive_type: AWD
-      year: 2023
+      trim: Standard Range
+      drive_type: RWD
+      year: 2024

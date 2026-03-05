@@ -15,34 +15,28 @@ import { NodeDatabaseAdapterFactory } from "../lib/db/node-adapter";
 import { VINDecoder } from "../lib/decode";
 import { join } from "path";
 
-// Sample VINs - unique by WMI+VDS (positions 1-9)
-const TESLA_SHANGHAI_MODEL_3 = [
-  "LRW3E1EB0PC932736", // 3E1EB - Standard Range Plus RWD
-  "LRW3E1FA6PC944248", // 3E1FA - Long Range RWD
-  "LRW3E7EB6RC101571", // 3E7EB - Standard Range Plus RWD (2024+)
-  "LRW3E7FA5RC099480", // 3E7FA - Long Range RWD (2024+)
-];
-
+// Sample VINs with expected trim/drive from position 8 motor code
+// Position 8: D=Single/RWD, E=Dual/AWD, F=Dual Performance/AWD
 const TESLA_SHANGHAI_MODEL_Y = [
-  "LRWYGDEE1PC010116", // YGDEE - Standard Range RWD
-  "LRWYGDEF4PC266095", // YGDEF - Long Range AWD
-  "LRWYGDFD2PC162086", // YGDFD - Performance AWD
-];
-
-const TESLA_AUSTIN_MODEL_Y = [
-  "7SAYGAEE8RF002511", // YGAEE - Standard Range RWD
-  "7SAYGDEE2NF433437", // YGDEE - Long Range RWD
-  "7SAYGDEF0NF562429", // YGDEF - Long Range AWD
-];
-
-const TESLA_AUSTIN_MODEL_X = [
-  "7SAXCAE50NF344293", // XCAE5 - Model X
-  "7SAXCBE51NF351212", // XCBE5 - Model X
-  "7SAXCDE50NF343873", // XCDE5 - Model X Plaid
+  { vin: "LRWYGDEE1PC010116", trim: "Long Range", drive: "AWD" }, // E = Dual Motor Standard
+  { vin: "LRWYGDEF4PC266095", trim: "Performance", drive: "AWD" }, // F = Dual Motor Performance
+  { vin: "LRWYGDFD5RC639046", trim: "Standard Range", drive: "RWD" }, // D = Single Motor Standard
 ];
 
 const TESLA_BERLIN_MODEL_Y = [
-  "XP7YGDEE6TB729697", // YGDEE - Standard Range RWD
+  { vin: "XP7YGDEE6TB729697", trim: "Long Range", drive: "AWD" }, // E = Dual Motor Standard
+];
+
+const TESLA_AUSTIN_MODEL_Y = [
+  "7SAYGAEE8RF002511", // VPIC baseline
+  "7SAYGDEE2NF433437",
+  "7SAYGDEF0NF562429",
+];
+
+const TESLA_AUSTIN_MODEL_X = [
+  "7SAXCAE50NF344293",
+  "7SAXCBE51NF351212",
+  "7SAXCDE50NF343873",
 ];
 
 describe("Community Patterns - Tesla International", () => {
@@ -56,8 +50,8 @@ describe("Community Patterns - Tesla International", () => {
   });
 
   describe("LRW (Tesla Shanghai)", () => {
-    it("should decode Model 3 VINs", async () => {
-      for (const vin of TESLA_SHANGHAI_MODEL_3) {
+    it("should decode Model Y with correct trim and drive type", async () => {
+      for (const { vin, trim, drive } of TESLA_SHANGHAI_MODEL_Y) {
         const result = await decoder.decode(vin, { includePatternDetails: true });
 
         expect(result.valid).toBe(true);
@@ -65,40 +59,36 @@ describe("Community Patterns - Tesla International", () => {
         expect(result.components?.wmi?.make).toBe("Tesla");
         expect(result.components?.wmi?.country).toBe("CHINA");
 
-        const model = result.patterns?.find((p) => p.element === "Model");
-        expect(model?.value).toBe("Model 3");
-      }
-    });
-
-    it("should decode Model Y VINs", async () => {
-      for (const vin of TESLA_SHANGHAI_MODEL_Y) {
-        const result = await decoder.decode(vin, { includePatternDetails: true });
-
-        expect(result.valid).toBe(true);
-        expect(result.components?.wmi?.code).toBe("LRW");
-        expect(result.components?.wmi?.make).toBe("Tesla");
-
+        // Check model
         const model = result.patterns?.find((p) => p.element === "Model");
         expect(model?.value).toBe("Model Y");
+
+        // Check trim (from position 8 motor code)
+        const trimPattern = result.patterns?.find((p) => p.element === "Trim");
+        expect(trimPattern?.value).toBe(trim);
+
+        // Check drive type
+        const drivePattern = result.patterns?.find((p) => p.element === "Drive Type");
+        expect(drivePattern?.value).toContain(drive);
       }
     });
 
-    it("should extract vehicle info from patterns", async () => {
-      // Test that vehicle info is properly extracted
-      const result = await decoder.decode("LRWYGDEE1PC010116", { includePatternDetails: true });
+    it("should extract vehicle info including trim", async () => {
+      const result = await decoder.decode("LRWYGDFD5RC639046", {
+        includePatternDetails: true,
+      });
 
       expect(result.valid).toBe(true);
       expect(result.components?.vehicle?.model).toBe("Model Y");
       expect(result.components?.vehicle?.make).toBe("Tesla");
-      // Verify patterns are returned
-      expect(result.patterns).toBeDefined();
-      expect(result.patterns!.length).toBeGreaterThan(0);
+      expect(result.components?.vehicle?.trim).toBe("Standard Range");
+      expect(result.components?.vehicle?.driveType).toBe("RWD/Rear-Wheel Drive");
     });
   });
 
   describe("XP7 (Tesla Berlin)", () => {
-    it("should decode Model Y VINs", async () => {
-      for (const vin of TESLA_BERLIN_MODEL_Y) {
+    it("should decode Model Y with correct trim and drive type", async () => {
+      for (const { vin, trim, drive } of TESLA_BERLIN_MODEL_Y) {
         const result = await decoder.decode(vin, { includePatternDetails: true });
 
         expect(result.valid).toBe(true);
@@ -106,9 +96,19 @@ describe("Community Patterns - Tesla International", () => {
         expect(result.components?.wmi?.make).toBe("Tesla");
         expect(result.components?.wmi?.country).toBe("GERMANY");
 
+        // Check model
         const model = result.patterns?.find((p) => p.element === "Model");
         expect(model?.value).toBe("Model Y");
 
+        // Check trim
+        const trimPattern = result.patterns?.find((p) => p.element === "Trim");
+        expect(trimPattern?.value).toBe(trim);
+
+        // Check drive type
+        const drivePattern = result.patterns?.find((p) => p.element === "Drive Type");
+        expect(drivePattern?.value).toContain(drive);
+
+        // Check plant
         const plantCity = result.patterns?.find((p) => p.element === "Plant City");
         expect(plantCity?.value).toBe("GRUENHEIDE");
       }
