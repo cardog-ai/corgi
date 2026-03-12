@@ -1,5 +1,12 @@
 # @cardog/corgi
 
+## 1.4.1
+
+### Patch Changes
+
+- - Fix F-150/F-550 misidentification (issue #22) - improved VIN coherence scoring with three-tier pattern matching that prioritizes schemas with more matching patterns
+  - Update VPIC database to February 2026 snapshot
+
 ## 1.3.0
 
 ### Minor Changes

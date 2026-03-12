@@ -1,6 +1,6 @@
 {
   "name": "@cardog/corgi",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Fast, offline VIN decoding for Node.js, browsers, and Cloudflare Workers. Powered by the NHTSA VPIC database.",
   "type": "module",
   "main": "./dist/index.cjs",
