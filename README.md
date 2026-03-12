@@ -1,14 +1,29 @@
 # Corgi VIN Decoder
 
 <div align="center">
-  <img src="./corgi.png" alt="Corgi - Fast VIN Decoder" width="200" height="200">
+  <img src="./cardog-icon.png" alt="Cardog" width="120" height="120" style="border-radius: 24px;">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="./corgi.png" alt="Corgi - Fast VIN Decoder" width="120" height="120">
 </div>
 
-Fast, offline VIN decoding for Node.js, browsers, and Cloudflare Workers. Powered by the NHTSA VPIC database.
+<div align="center">
+  <strong>Fast, offline VIN decoding for Node.js, browsers, and Cloudflare Workers.</strong><br>
+  Powered by the NHTSA VPIC database.
+</div>
 
-[![npm version](https://badge.fury.io/js/%40cardog%2Fcorgi.svg)](https://badge.fury.io/js/%40cardog%2Fcorgi)
+<br>
+
+<div align="center">
+
+[![npm version](https://badge.fury.io/js/%40cardog%2Fcorgi.svg)](https://www.npmjs.com/package/@cardog/corgi)
+[![Downloads](https://img.shields.io/npm/dm/@cardog/corgi.svg)](https://www.npmjs.com/package/@cardog/corgi)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC)
+[![Cardog API](https://img.shields.io/badge/Cardog-API-orange.svg)](https://docs.cardog.app)
+
+</div>
+
+> **Need more than basic VIN decoding?** Check out the [Cardog API](https://docs.cardog.app) for comprehensive vehicle data including market values, safety recalls, ownership costs, and more.
 
 ## Installation
 
@@ -292,6 +307,26 @@ import { ErrorCode, ErrorCategory, BodyStyle } from "@cardog/corgi";
 import { initD1Adapter } from "@cardog/corgi/d1-adapter";
 import { createDecoder } from "@cardog/corgi/browser";
 ```
+
+---
+
+## Cardog API
+
+**Corgi provides fast, offline VIN decoding** - but if you need comprehensive vehicle intelligence, the [Cardog API](https://docs.cardog.app) offers much more:
+
+- **Enriched VIN Decoding** - Corgi decoding plus detailed variant data, specs, and features
+- **Market Analysis** - Pricing insights, market trends, and comparable vehicle listings
+- **Safety Recalls** - NHTSA and Transport Canada recall data searchable by VIN or make/model
+- **Vehicle Listings** - Search active listings with filters for make, model, price, location
+- **EV Data** - Charging stations, efficiency ratings, and range estimates
+
+```bash
+# Decode a VIN with full vehicle data
+curl "https://api.cardog.io/v1/vin/1HGCM82633A123456" \
+  -H "x-api-key: your-api-key"
+```
+
+[Get started at docs.cardog.app](https://docs.cardog.app)
 
 ---
 

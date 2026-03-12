@@ -1,5 +1,16 @@
 # @cardog/corgi
 
+## 2.0.0
+
+### Major Changes
+
+- Community VIN Patterns - A new way to extend corgi's VIN decoding capabilities
+  - Add community pattern system for WMIs not in VPIC database
+  - Include Tesla international patterns (LRW - China, XP7 - Berlin)
+  - Build pipeline: validate, apply, and generate community patterns
+  - Full contribution guide and schema documentation
+  - Patterns are applied at build time, merged into the published database
+
 ## 1.4.1
 
 ### Patch Changes
