@@ -13,9 +13,14 @@
 
 import { parse } from "yaml";
 import { readFileSync, readdirSync, statSync, existsSync, copyFileSync } from "fs";
-import { join, relative, basename } from "path";
+import { join, relative, basename, dirname } from "path";
+import { fileURLToPath } from "url";
 import Database from "better-sqlite3";
 import { validateWmiFile } from "./schema";
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // ANSI colors
 const RED = "\x1b[31m";
@@ -340,7 +345,7 @@ function main() {
   const dryRun = args.includes("--dry-run");
   const dbArgIndex = args.indexOf("--db");
 
-  const baseDir = join(import.meta.dirname || __dirname, "../..");
+  const baseDir = join(__dirname, "../..");
   const defaultDbPath = join(baseDir, "db/vpic.lite.db");
   const dbPath = dbArgIndex !== -1 ? args[dbArgIndex + 1] : defaultDbPath;
   const wmiDir = join(baseDir, "community/wmi");

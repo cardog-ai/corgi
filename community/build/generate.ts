@@ -11,8 +11,13 @@
 
 import { parse } from "yaml";
 import { readFileSync, writeFileSync, readdirSync, statSync } from "fs";
-import { join, basename } from "path";
+import { join, basename, dirname } from "path";
+import { fileURLToPath } from "url";
 import Database from "better-sqlite3";
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // ============================================================================
 // Types
@@ -558,11 +563,11 @@ if (args.length === 0) {
 
 const dbPath = args.includes("--db")
   ? args[args.indexOf("--db") + 1]
-  : join(import.meta.dirname || __dirname, "../../db/vpic.lite.db");
+  : join(__dirname, "../../db/vpic.lite.db");
 
 if (args[0] === "--all") {
   // Process all YAML files in community/wmi/
-  const wmiDir = join(import.meta.dirname || __dirname, "../wmi");
+  const wmiDir = join(__dirname, "../wmi");
   console.log(`Processing all YAML files in ${wmiDir}...`);
   // TODO: Implement recursive processing
 } else {
