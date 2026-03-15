@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, createWriteStream } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, createWriteStream } from 'fs';
 import { createGunzip } from 'zlib';
 import { pipeline } from 'stream/promises';
 import path from 'path';
@@ -7,22 +7,32 @@ import path from 'path';
 const TEST_DB_URL = 'https://corgi.cardog.io/test.db.gz';
 const TEST_DB_PATH = path.join(__dirname, 'test.db');
 
-async function downloadTestDatabase() {
-  if (existsSync(TEST_DB_PATH)) {
-    console.log('Test database already exists, skipping download');
+// Full database for community pattern tests
+const VPIC_DB_URL = 'https://corgi.cardog.io/vpic.lite.db.gz';
+const VPIC_DB_PATH = path.join(__dirname, '..', 'db', 'vpic.lite.db');
+
+async function downloadDatabase(url: string, destPath: string, name: string) {
+  if (existsSync(destPath)) {
+    console.log(`${name} already exists, skipping download`);
     return;
   }
 
-  console.log('Downloading test database from remote...');
+  // Ensure directory exists
+  const dir = path.dirname(destPath);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+
+  console.log(`Downloading ${name} from ${url}...`);
 
   try {
-    const response = await fetch(TEST_DB_URL);
+    const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to download test database: ${response.status}`);
+      throw new Error(`Failed to download ${name}: ${response.status}`);
     }
 
     const gunzip = createGunzip();
-    const fileStream = createWriteStream(TEST_DB_PATH);
+    const fileStream = createWriteStream(destPath);
 
     if (!response.body) {
       throw new Error('Response body is null');
@@ -32,15 +42,18 @@ async function downloadTestDatabase() {
     const nodeStream = response.body as any;
     await pipeline(nodeStream, gunzip, fileStream);
 
-    console.log('Test database downloaded and decompressed successfully');
+    console.log(`${name} downloaded and decompressed successfully`);
   } catch (error) {
-    console.error('Failed to download test database:', error);
+    console.error(`Failed to download ${name}:`, error);
     throw error;
   }
 }
 
-// Download database before tests (this runs immediately when setup.ts is imported)
-await downloadTestDatabase();
+// Download databases before tests (runs immediately when setup.ts is imported)
+await Promise.all([
+  downloadDatabase(TEST_DB_URL, TEST_DB_PATH, 'Test database'),
+  downloadDatabase(VPIC_DB_URL, VPIC_DB_PATH, 'VPIC database'),
+]);
 
 // Different possible paths for sql-wasm.wasm file
 const possiblePaths = [
