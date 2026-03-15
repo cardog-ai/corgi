@@ -1,6 +1,7 @@
 import { copyFileSync, existsSync, mkdirSync, createWriteStream } from 'fs';
 import { createGunzip } from 'zlib';
 import { pipeline } from 'stream/promises';
+import { execSync } from 'child_process';
 import path from 'path';
 
 // Database download setup
@@ -54,6 +55,19 @@ await Promise.all([
   downloadDatabase(TEST_DB_URL, TEST_DB_PATH, 'Test database'),
   downloadDatabase(VPIC_DB_URL, VPIC_DB_PATH, 'VPIC database'),
 ]);
+
+// Apply community patterns to the VPIC database
+// This ensures Tesla LRW/XP7 patterns are available for testing
+try {
+  console.log('Applying community patterns...');
+  execSync('pnpm community:apply', {
+    cwd: path.join(__dirname, '..'),
+    stdio: 'inherit',
+  });
+} catch (error) {
+  console.error('Failed to apply community patterns:', error);
+  // Don't throw - patterns may already be applied
+}
 
 // Different possible paths for sql-wasm.wasm file
 const possiblePaths = [
