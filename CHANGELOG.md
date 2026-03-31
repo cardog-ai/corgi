@@ -1,5 +1,15 @@
 # @cardog/corgi
 
+## 2.0.2
+
+### Patch Changes
+
+- Fix Element name mismatches causing missing transmission and engine power data (#27)
+  - `'Transmission'` → `'Transmission Style'`
+  - `'Engine Power (KW)'` → `'Engine Power (kW)'`
+- Add element-names.test.ts to validate Element names against NHTSA vPIC database
+- Update vpic-pipeline Element allowlist to match actual NHTSA Element.Name values
+
 ## 2.0.0
 
 ### Major Changes
