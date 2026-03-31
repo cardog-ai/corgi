@@ -408,7 +408,7 @@ export class VINDecoder {
         case 'Fuel Type - Secondary':
           secondaryFuelType = pattern.value;
           break;
-        case 'Transmission':
+        case 'Transmission Style':
           info.transmission = pattern.value;
           break;
         case 'Doors':
@@ -505,7 +505,7 @@ export class VINDecoder {
           hasEngineInfo = true;
           break;
         case 'Engine Brake (hp) From':
-        case 'Engine Power (KW)':
+        case 'Engine Power (kW)':
           info.power = pattern.value;
           hasEngineInfo = true;
           break;
