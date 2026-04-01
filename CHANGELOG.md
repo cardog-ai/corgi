@@ -1,5 +1,12 @@
 # @cardog/corgi
 
+## 2.0.3
+
+### Patch Changes
+
+- Update vPIC database to March 2026 snapshot
+- Note: Transmission data for Toyota RAV4 2021+ requires VehicleSpecSchema tables (not yet supported)
+
 ## 2.0.2
 
 ### Patch Changes
