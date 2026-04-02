@@ -1,0 +1,54 @@
+{
+  "name": "@cardog/corgi",
+  "version": "3.0.0-alpha.1",
+  "description": "High-performance offline VIN decoder. No SQLite, no network - just binary indexes and O(log n) lookup.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "transform": "tsx build/transform.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "benchmark": "tsx test/benchmark.ts",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0-beta2"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^9.4.1",
+    "@types/better-sqlite3": "^7.6.9",
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.3.0"
+  },
+  "keywords": [
+    "vin",
+    "vin-decoder",
+    "automotive",
+    "vehicle-identification",
+    "nhtsa",
+    "vpic",
+    "offline",
+    "fast",
+    "binary-search"
+  ],
+  "author": "Cardog <dev@cardog.ai>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cardog-ai/corgi"
+  },
+  "sideEffects": false
+}
