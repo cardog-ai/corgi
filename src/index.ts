@@ -12,14 +12,14 @@
  *   const result = decoder.decode('5YJ3E1EA1PF123456');
  */
 
-export { VINDecoder, type DecoderOptions } from './decoder';
-export { IndexReader, createIndexReader } from './index-reader';
+export { VINDecoder, type DecoderOptions } from './decoder.js';
+export { IndexReader, createIndexReader } from './index-reader.js';
 export {
   matchPatterns,
   matchesPattern,
   calculateConfidence,
   deduplicateMatches,
-} from './pattern-matcher';
+} from './pattern-matcher.js';
 export type {
   Lookup,
   WmiSchema,
@@ -33,11 +33,11 @@ export type {
   Error,
   IndexHeader,
   OffsetEntry,
-} from './types';
+} from './types.js';
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { VINDecoder, DecoderOptions } from './decoder';
+import { VINDecoder, DecoderOptions } from './decoder.js';
 
 /**
  * Create a decoder from index files on disk (Node.js)

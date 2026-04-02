@@ -10,8 +10,8 @@
  *   Position 12-17: Production sequence
  */
 
-import { IndexReader, createIndexReader } from './index-reader';
-import { matchPatterns, deduplicateMatches } from './pattern-matcher';
+import { IndexReader, createIndexReader } from './index-reader.js';
+import { matchPatterns, deduplicateMatches } from './pattern-matcher.js';
 import type {
   Lookup,
   WmiSchema,
@@ -23,7 +23,7 @@ import type {
   PatternMatch,
   DecodeWarning,
   DecodeError,
-} from './types';
+} from './types.js';
 
 // ============================================================================
 // VIN Constants

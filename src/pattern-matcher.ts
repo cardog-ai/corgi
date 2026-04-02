@@ -13,7 +13,7 @@
  *   - '|' separates VDS pattern from VIS pattern (e.g., "*****|*U")
  */
 
-import type { Lookup, PatternMatch } from './types';
+import type { Lookup, PatternMatch } from './types.js';
 
 /**
  * Check if a character matches a pattern character
