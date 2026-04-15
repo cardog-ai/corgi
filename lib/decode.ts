@@ -355,17 +355,35 @@ export class VINDecoder {
       gvwr: '',
     };
 
-    // First, sort model patterns by elementWeight (if available)
+    // Count non-Model patterns per schema for coherence scoring
+    // A schema with more matching patterns suggests better overall VIN coherence
+    const schemaPatternCount: Record<string, number> = {};
+    for (const p of patterns) {
+      if (p.element !== 'Model' && p.schema) {
+        schemaPatternCount[p.schema] = (schemaPatternCount[p.schema] || 0) + 1;
+      }
+    }
+
+    // Sort model patterns using three-tier scoring:
+    // 1. elementWeight (higher first)
+    // 2. schema coherence - count of non-Model patterns from same schema (higher first)
+    // 3. confidence (higher first)
     const modelPatterns = patterns
       .filter(p => p.element === 'Model' && p.value)
       .sort((a, b) => {
-        // Use elementWeight if available (higher weight first)
+        // Primary: elementWeight
         const weightA = a.metadata?.elementWeight ?? 0;
         const weightB = b.metadata?.elementWeight ?? 0;
         if (weightA !== weightB) {
           return weightB - weightA;
         }
-        // Fall back to confidence if weights are equal
+        // Secondary: schema coherence
+        const schemaCountA = schemaPatternCount[a.schema] || 0;
+        const schemaCountB = schemaPatternCount[b.schema] || 0;
+        if (schemaCountA !== schemaCountB) {
+          return schemaCountB - schemaCountA;
+        }
+        // Tertiary: confidence
         return b.confidence - a.confidence;
       });
 
