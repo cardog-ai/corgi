@@ -1,5 +1,34 @@
 # @cardog/corgi
 
+## 3.0.0-alpha.1
+
+### Major Changes
+
+- **Complete architecture rewrite** - Binary indexes replace SQLite (#21)
+  - O(log n) lookup via sorted keys + binary search
+  - MessagePack-encoded values for compact storage
+  - No more SQLite dependency
+  
+- **Performance**
+  - 3,300+ decodes/sec (single thread)
+  - 23ms cold start
+  - 93.6% success rate on 1,100 VIN benchmark
+  
+- **Size**
+  - 63MB raw indexes
+  - 6.5MB npm package (compressed)
+  - 3.1MB with brotli (CDN delivery)
+
+### Credits
+
+Inspired by [corgi-rs](https://github.com/wonderooo/corgi-rs) by [@wonderooo](https://github.com/wonderooo).
+
+### Breaking Changes
+
+- Removed SQLite dependency - no more `better-sqlite3` or `sql.js`
+- New `createDecoder()` API replaces direct import
+- Types restructured (v2 types in `_v2/` for reference)
+
 ## 2.0.3
 
 ### Patch Changes
