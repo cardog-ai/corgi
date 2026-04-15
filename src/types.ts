@@ -193,6 +193,8 @@ export interface PatternMatch {
   confidence: number;
   weight: number;
   positions: number[];
+  /** Schema ID this pattern came from (for coherence scoring) */
+  schemaId?: string;
 }
 
 // ============================================================================

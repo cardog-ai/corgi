@@ -1,6 +1,6 @@
 {
   "name": "@cardog/corgi",
-  "version": "3.0.0-alpha.1",
+  "version": "3.0.1-beta.0",
   "description": "High-performance offline VIN decoder. Binary indexes, O(log n) lookup, 7400+ decodes/sec.",
   "type": "module",
   "main": "./dist/index.js",

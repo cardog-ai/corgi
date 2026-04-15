@@ -165,7 +165,8 @@ export function matchPatterns(
   lookups: Lookup[],
   vds: string,
   vis: string,
-  confidenceThreshold = 0.5
+  confidenceThreshold = 0.5,
+  schemaId?: string
 ): PatternMatch[] {
   const fullInput = vds + vis;
   const matches: PatternMatch[] = [];
@@ -202,6 +203,7 @@ export function matchPatterns(
       confidence,
       weight: lookup.weight || 0,
       positions,
+      schemaId,
     });
   }
 
@@ -216,14 +218,43 @@ export function matchPatterns(
 
 /**
  * Deduplicate matches by element code, keeping highest scored
+ * Uses three-tier scoring:
+ * 1. Weight (higher first)
+ * 2. Schema coherence - count of non-Model patterns from same schema (higher first)
+ * 3. Confidence (higher first)
  */
 export function deduplicateMatches(matches: PatternMatch[]): PatternMatch[] {
+  // Count non-Model patterns per schema for coherence scoring
+  // A schema with more matching patterns suggests better overall VIN coherence
+  const schemaPatternCount = new Map<string, number>();
+  for (const match of matches) {
+    if (match.schemaId && match.elementCode !== 'Model') {
+      schemaPatternCount.set(
+        match.schemaId,
+        (schemaPatternCount.get(match.schemaId) || 0) + 1
+      );
+    }
+  }
+
   const seen = new Map<string, PatternMatch>();
 
   for (const match of matches) {
     const existing = seen.get(match.elementCode);
-    if (!existing || match.weight > existing.weight ||
-        (match.weight === existing.weight && match.confidence > existing.confidence)) {
+    if (!existing) {
+      seen.set(match.elementCode, match);
+      continue;
+    }
+
+    // Compare: weight > schema coherence > confidence
+    const matchSchemaCount = match.schemaId ? (schemaPatternCount.get(match.schemaId) || 0) : 0;
+    const existingSchemaCount = existing.schemaId ? (schemaPatternCount.get(existing.schemaId) || 0) : 0;
+
+    const shouldReplace =
+      match.weight > existing.weight ||
+      (match.weight === existing.weight && matchSchemaCount > existingSchemaCount) ||
+      (match.weight === existing.weight && matchSchemaCount === existingSchemaCount && match.confidence > existing.confidence);
+
+    if (shouldReplace) {
       seen.set(match.elementCode, match);
     }
   }

@@ -162,10 +162,11 @@ export class VINDecoder {
     let allMatches: PatternMatch[] = [];
 
     for (const schema of validSchemas) {
-      const lookups = this.patternsIndex.get(String(schema.schemaId));
+      const schemaIdStr = String(schema.schemaId);
+      const lookups = this.patternsIndex.get(schemaIdStr);
       if (!lookups) continue;
 
-      const matches = matchPatterns(lookups, vds, vis, this.options.confidenceThreshold);
+      const matches = matchPatterns(lookups, vds, vis, this.options.confidenceThreshold, schemaIdStr);
       allMatches = allMatches.concat(matches);
     }
 
