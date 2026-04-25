@@ -37,9 +37,18 @@ describe('Pattern Matching', () => {
     });
 
     it('should handle VIS patterns with pipe separator', () => {
-      expect(matchesPattern('U', '*****|*U')).toBe(true);
-      expect(matchesPattern('A', '*****|*U')).toBe(false);
-      expect(matchesPattern('X', '*****|**')).toBe(true); // wildcard
+      // VIS patterns use fullInput: VDS(5) + check(1) + year(1) + plant(1) + serial(6) = 14 chars
+      // Layout: [0-4]=VDS, [5]=check, [6]=year, [7]=plant, [8-13]=serial
+      // Pattern *****|*U = any VDS, any year, plant must be U
+      expect(matchesPattern('ABCDE00U000000', '*****|*U')).toBe(true);
+      expect(matchesPattern('ABCDE00A000000', '*****|*U')).toBe(false);
+      expect(matchesPattern('ABCDE00X000000', '*****|**')).toBe(true); // wildcard plant
+
+      // Pattern BFGFF|*A = VDS must be BFGFF, any year, plant must be A
+      expect(matchesPattern('BFGFF00A000000', 'BFGFF|*A')).toBe(true);
+      expect(matchesPattern('BFGFF0NA000000', 'BFGFF|*A')).toBe(true); // any year
+      expect(matchesPattern('BFGFF00U000000', 'BFGFF|*A')).toBe(false); // wrong plant
+      expect(matchesPattern('XXXXX00A000000', 'BFGFF|*A')).toBe(false); // wrong VDS
     });
   });
 
@@ -59,8 +68,13 @@ describe('Pattern Matching', () => {
     });
 
     it('should handle VIS patterns', () => {
-      expect(calculateConfidence('U', '*****|*U')).toBe(1.0);
-      expect(calculateConfidence('X', '*****|**')).toBe(0.8); // wildcard
+      // VIS patterns use fullInput (14 chars): [0-4]=VDS, [5]=check, [6]=year, [7]=plant
+      expect(calculateConfidence('ABCDE00U000000', '*****|*U')).toBe(1.0);
+      expect(calculateConfidence('ABCDE00X000000', '*****|**')).toBe(0.8); // wildcard plant
+
+      // VDS must also match for non-wildcard VDS patterns
+      expect(calculateConfidence('BFGFF00A000000', 'BFGFF|*A')).toBe(1.0);
+      expect(calculateConfidence('XXXXX00A000000', 'BFGFF|*A')).toBe(0); // VDS mismatch
     });
   });
 

@@ -35,6 +35,48 @@ const CHECK_DIGIT_POS = 8;
 const MODEL_YEAR_POS = 9;
 const PLANT_CODE_POS = 10;
 
+// Commercial vehicle WMIs - patterns often discontinued in federal submissions
+const COMMERCIAL_WMIS = new Set([
+  '1FD', '1FT', '2FD', '2FT', '3FD', '3FT',  // Ford heavy trucks
+  '1HT', '1HS', '2HT', '3HT',                 // International
+  '1GD', '1GB', '1GC', '2GD', '3GD',          // GM Commercial
+  '1FU', '1FV', '1FW', '3AL',                 // Freightliner
+  '1M1', '1M2', '1M3', '1M9',                 // Mack
+  '1NK', '1XK', '2NK', '3NK',                 // Kenworth
+  '1NP', '1XP', '2NP',                        // Peterbilt
+  '4V4', '4VZ',                               // Volvo Trucks
+  '5KK', '5KL',                               // Western Star
+  '1H2', '1H4', '5PV',                        // Hino
+  '4KL', '52N', 'JAL',                        // Isuzu Commercial
+  '1BA', '1BU',                               // Blue Bird (buses)
+]);
+
+// Extended WMI: small-volume manufacturers (<500 vehicles/year) use 6-char WMI
+// Format: positions 1-3 end in "9" + positions 12-14 form the full identifier
+const EXTENDED_WMI_PREFIXES = new Set([
+  '1A9', '1B9', '1C9', '1D9', '1E9', '1F9', '1G9', '1H9',
+  '1J9', '1K9', '1L9', '1M9', '1N9', '1P9', '1R9', '1S9',
+  '1T9', '1U9', '1V9', '1W9', '1X9', '1Y9', '1Z9',
+  '2A9', '2B9', '2C9', '2D9', '2E9', '2F9', '2G9', '2H9',
+  '2J9', '2K9', '2L9', '2M9', '2N9', '2P9', '2R9', '2S9',
+  '2T9', '2U9', '2V9', '2W9', '2X9', '2Y9', '2Z9',
+  '3A9', '3B9', '3C9', '3D9', '3E9', '3F9', '3G9', '3H9',
+  '3J9', '3K9', '3L9', '3M9', '3N9', '3P9', '3R9', '3S9',
+  '3T9', '3U9', '3V9', '3W9', '3X9', '3Y9', '3Z9',
+  '4A9', '4B9', '4C9', '4D9', '4E9', '4F9', '4G9', '4H9',
+  '4J9', '4K9', '4L9', '4M9', '4N9', '4P9', '4R9', '4S9',
+  '4T9', '4U9', '4V9', '4W9', '4X9', '4Y9', '4Z9',
+  '5A9', '5B9', '5C9', '5D9', '5E9', '5F9', '5G9', '5H9',
+  '5J9', '5K9', '5L9', '5M9', '5N9', '5P9', '5R9', '5S9',
+  '5T9', '5U9', '5V9', '5W9', '5X9', '5Y9', '5Z9',
+  '8A9', '8B9', '8C9', '8D9', '8E9', '8F9', '8G9', '8H9',
+  '8J9', '8K9', '8L9', '8M9', '8N9', '8P9', '8R9', '8S9',
+  '8T9', '8U9', '8V9', '8W9', '8X9', '8Y9', '8Z9',
+  '9A9', '9B9', '9C9', '9D9', '9E9', '9F9', '9G9', '9H9',
+  '9J9', '9K9', '9L9', '9M9', '9N9', '9P9', '9R9', '9S9',
+  '9T9', '9U9', '9V9', '9W9', '9X9', '9Y9', '9Z9',
+]);
+
 // Model year decoding (position 10)
 const YEAR_CODES: Record<string, number> = {
   A: 2010, B: 2011, C: 2012, D: 2013, E: 2014, F: 2015, G: 2016, H: 2017,
@@ -110,13 +152,19 @@ export class VINDecoder {
     }
 
     // Extract components
-    const wmi = vin.slice(0, 3);
+    const wmi3 = vin.slice(0, 3);
     const vds = vin.slice(3, 9);
     const vis = vin.slice(9, 17);
     const checkDigit = vin[CHECK_DIGIT_POS];
     const modelYearChar = vin[MODEL_YEAR_POS];
     const plantCode = vin[PLANT_CODE_POS];
     const serialNumber = vin.slice(11, 17);
+
+    // Extended WMI: small-volume manufacturers use 6-char WMI (pos 1-3 + pos 12-14)
+    const extendedWmi = EXTENDED_WMI_PREFIXES.has(wmi3)
+      ? wmi3 + vin.slice(11, 14)
+      : null;
+    const wmi = extendedWmi || wmi3;
 
     // Model year
     const modelYear = YEAR_CODES[modelYearChar];
@@ -149,11 +197,17 @@ export class VINDecoder {
       }
     }
 
-    // Get WMI info
-    const wmiMakes = this.wmiMakeIndex.get(wmi);
+    // Get WMI info - try extended WMI first, fall back to 3-char
+    let wmiMakes = extendedWmi ? this.wmiMakeIndex.get(extendedWmi) : undefined;
+    if (!wmiMakes || wmiMakes.length === 0) {
+      wmiMakes = this.wmiMakeIndex.get(wmi3);
+    }
 
-    // Get schemas for this WMI and year
-    const wmiSchemas = this.wmiSchemaIndex.get(wmi) || [];
+    // Get schemas for this WMI and year - try extended WMI first, fall back to 3-char
+    let wmiSchemas = extendedWmi ? (this.wmiSchemaIndex.get(extendedWmi) || []) : [];
+    if (wmiSchemas.length === 0) {
+      wmiSchemas = this.wmiSchemaIndex.get(wmi3) || [];
+    }
     const validSchemas = wmiSchemas.filter(s =>
       modelYear >= s.yearFrom && (s.yearTo === null || modelYear <= s.yearTo)
     );
@@ -172,14 +226,54 @@ export class VINDecoder {
 
     // Deduplicate and extract info
     const uniqueMatches = deduplicateMatches(allMatches);
-    const vehicle = this.extractVehicleInfo(uniqueMatches, wmiMakes, modelYear);
+    let vehicle = this.extractVehicleInfo(uniqueMatches, wmiMakes, modelYear);
     const engine = this.extractEngineInfo(uniqueMatches);
     const plant = this.extractPlantInfo(uniqueMatches, plantCode);
 
+    // Check for trailer/commercial fallback
+    const isTrailer = wmiMakes?.some(w => w.vehicleType === 'Trailer');
+    const isCommercial = COMMERCIAL_WMIS.has(wmi3);
+
+    // Trailer fallback: return partial decode from WMI
+    if (!vehicle && isTrailer && wmiMakes && wmiMakes.length > 0) {
+      const trailerInfo = wmiMakes[0];
+      vehicle = {
+        make: trailerInfo.manufacturer || trailerInfo.make || 'Unknown Trailer',
+        model: 'Trailer',
+        year: modelYear,
+        bodyType: 'Trailer',
+      };
+      warnings.push({
+        code: 'TRAILER_PARTIAL_DECODE',
+        message: 'Trailer VIN decoded from WMI only (VDS patterns not available)',
+      });
+    }
+
+    // Commercial vehicle fallback: return partial decode from WMI
+    if (!vehicle && isCommercial && wmiMakes && wmiMakes.length > 0) {
+      const commercialInfo = wmiMakes[0];
+      const vehicleType = commercialInfo.vehicleType || 'Commercial Vehicle';
+      vehicle = {
+        make: commercialInfo.make || commercialInfo.manufacturer || 'Unknown',
+        model: vehicleType,
+        year: modelYear,
+        bodyType: vehicleType,
+      };
+      warnings.push({
+        code: 'COMMERCIAL_PARTIAL_DECODE',
+        message: `Commercial vehicle decoded from WMI only (federal patterns discontinued for ${wmi3})`,
+      });
+    }
+
     // Calculate overall confidence
-    const confidence = uniqueMatches.length > 0
+    let confidence = uniqueMatches.length > 0
       ? uniqueMatches.reduce((sum, m) => sum + m.confidence, 0) / uniqueMatches.length
       : 0;
+
+    // Lower confidence for partial decodes
+    if ((isTrailer || isCommercial) && uniqueMatches.length === 0 && vehicle) {
+      confidence = 0.6;
+    }
 
     return {
       vin,
@@ -241,9 +335,25 @@ export class VINDecoder {
   ): DecodedVehicle | undefined {
     const info: Partial<DecodedVehicle> = { year: modelYear };
 
-    // Get make from WMI lookup first
+    // Get make from WMI lookup - select correct make when multiple exist
     if (wmiMakes && wmiMakes.length > 0) {
-      info.make = wmiMakes[0].make;
+      if (wmiMakes.length === 1) {
+        info.make = wmiMakes[0].make;
+      } else {
+        // Multiple makes for this WMI - match make name to manufacturer name
+        const manufacturer = wmiMakes[0].manufacturer?.toUpperCase() || '';
+        const matched = wmiMakes.find(wm =>
+          wm.make && manufacturer.includes(wm.make.toUpperCase())
+        );
+        if (matched) {
+          info.make = matched.make;
+        } else if (wmiMakes[0].manufacturer) {
+          // Use manufacturer name as make
+          info.make = wmiMakes[0].manufacturer;
+        } else {
+          info.make = wmiMakes[0].make;
+        }
+      }
     }
 
     for (const match of matches) {

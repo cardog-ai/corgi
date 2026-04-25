@@ -77,15 +77,31 @@ function parsePattern(pattern: string): string[] {
 
 /**
  * Check if input matches pattern
+ * For VIS patterns (e.g., "BFGFF|*A"), input is fullInput (VDS+VIS = 14 chars)
+ * Layout: [0-4]=VDS, [5]=check, [6]=year, [7]=plant, [8-13]=serial
  */
 export function matchesPattern(input: string, pattern: string): boolean {
-  // Handle VIS patterns with pipe separator (e.g., "*****|*U")
+  // Handle VIS patterns with pipe separator (e.g., "BFGFF|*A")
   const [vdsPattern, visPattern] = pattern.split('|');
 
   if (visPattern) {
-    // VIS pattern - match against input which should be plant code char
-    const plantCodePattern = visPattern[1]; // Second char after *
-    return plantCodePattern === '*' || input[0] === plantCodePattern;
+    // VIS pattern - must verify BOTH VDS and plant code
+    // input layout: VDS(5) + check(1) + year(1) + plant(1) + serial(6) = 14 chars
+
+    // First verify VDS portion (first 5 chars)
+    if (vdsPattern !== '*****') {
+      const vdsSegments = parsePattern(vdsPattern);
+      for (let i = 0; i < vdsSegments.length && i < 5; i++) {
+        if (!charMatches(input[i], vdsSegments[i])) {
+          return false;
+        }
+      }
+    }
+
+    // Then check plant code (position 7 in fullInput = position 11 in VIN)
+    const plantCodePattern = visPattern[1];
+    const plantCode = input[7];
+    return plantCodePattern === '*' || plantCode === plantCodePattern;
   }
 
   // Standard VDS pattern
@@ -107,24 +123,37 @@ export function matchesPattern(input: string, pattern: string): boolean {
 /**
  * Calculate confidence score for a pattern match
  * Higher score = more specific pattern
+ * For VIS patterns, input is fullInput (VDS+VIS = 14 chars)
  */
 export function calculateConfidence(input: string, pattern: string): number {
-  const [actualPattern, visPattern] = pattern.split('|');
+  const [vdsPattern, visPattern] = pattern.split('|');
 
-  // VIS patterns (plant codes)
+  // VIS patterns (plant codes) - must verify VDS matches first
   if (visPattern) {
+    // Verify VDS portion matches (first 5 chars)
+    if (vdsPattern !== '*****') {
+      const vdsSegments = parsePattern(vdsPattern);
+      for (let i = 0; i < vdsSegments.length && i < 5; i++) {
+        if (!charMatches(input[i], vdsSegments[i])) {
+          return 0;
+        }
+      }
+    }
+
+    // Then check plant code (position 7 = VIN position 11)
     const plantCodePattern = visPattern[1];
+    const plantCode = input[7];
     if (plantCodePattern === '*') return 0.8;
-    if (input[0] === plantCodePattern) return 1.0;
+    if (plantCode === plantCodePattern) return 1.0;
     return 0;
   }
 
   // Standard pattern
-  if (!matchesPattern(input, actualPattern)) {
+  if (!matchesPattern(input, vdsPattern)) {
     return 0;
   }
 
-  const segments = parsePattern(actualPattern);
+  const segments = parsePattern(vdsPattern);
   let exactMatches = 0;
   let classMatches = 0;
   let wildcardMatches = 0;
@@ -172,11 +201,9 @@ export function matchPatterns(
   const matches: PatternMatch[] = [];
 
   for (const lookup of lookups) {
-    const isVISPattern = lookup.pattern.includes('|');
-
-    // Calculate confidence
-    const patternInput = isVISPattern ? vis : fullInput;
-    const confidence = calculateConfidence(patternInput, lookup.pattern);
+    // Calculate confidence - always use fullInput for both VDS and VIS patterns
+    // VIS patterns need full context to verify VDS portion before checking plant code
+    const confidence = calculateConfidence(fullInput, lookup.pattern);
 
     // Apply threshold (lower for plant codes)
     const threshold = lookup.elementCode.toLowerCase().includes('plant')
@@ -187,8 +214,8 @@ export function matchPatterns(
 
     // Calculate positions
     const positions: number[] = [];
-    const [actualPattern] = lookup.pattern.split('|');
-    const startPos = isVISPattern ? 9 : 3;
+    const [actualPattern, hasVisPattern] = lookup.pattern.split('|');
+    const startPos = hasVisPattern !== undefined ? 9 : 3;
 
     for (let i = 0; i < actualPattern.length; i++) {
       if (actualPattern[i] !== '|') {
