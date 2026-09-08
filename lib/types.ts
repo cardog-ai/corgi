@@ -189,6 +189,13 @@ export interface ModelYearResult {
   /** Determined model year */
   year: number;
 
+  /**
+   * Alternate candidate for the other 30-year block, present only when the
+   * position-7 decade heuristic (49 CFR 565.15, Table VII note) is ambiguous
+   * (numeric position 7 — legal for buses and other heavy vehicles).
+   */
+  alternateYear?: number;
+
   /** Source of the year determination */
   source: 'position' | 'override' | 'calculated';
 
