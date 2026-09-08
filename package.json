@@ -102,19 +102,19 @@
   },
   "license": "ISC",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "peerDependencies": {
     "sql.js": "^1.8.0"
   },
   "dependencies": {
-    "better-sqlite3": "^9.4.1",
+    "better-sqlite3": "^12.4.6",
     "commander": "^12.0.0"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.5",
     "@cloudflare/workers-types": "^4.20250525.0",
-    "@types/better-sqlite3": "^7.6.9",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20.11.19",
     "@types/sql.js": "^1.4.9",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
