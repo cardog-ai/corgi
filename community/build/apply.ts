@@ -111,6 +111,57 @@ function resolveEntityId(
   return row?.Id ?? null;
 }
 
+/**
+ * Resolve an entity by name, creating it when missing.
+ *
+ * VPIC only covers US-market vehicles, so community patterns routinely
+ * reference entities that do not exist yet (e.g. Manufacturer "SKODA AUTO"
+ * for EU WMIs). Insert-on-resolve keeps contributions self-contained
+ * instead of hard-failing; the caller's transaction makes it atomic.
+ */
+function resolveOrCreateEntityId(
+  db: Database.Database,
+  table: "Manufacturer" | "Make" | "Country" | "VehicleType",
+  name: string
+): number | null {
+  const existing = resolveEntityId(db, table, name);
+  if (existing !== null) {
+    return existing;
+  }
+  const now = new Date().toISOString();
+  const id = getNextId(db, table);
+  if (table === "Manufacturer") {
+    db.prepare("INSERT INTO Manufacturer (Id, Name) VALUES (?, ?)").run(id, name);
+  } else if (table === "Make") {
+    db.prepare("INSERT INTO Make (Id, Name, CreatedOn, UpdatedOn) VALUES (?, ?, ?, ?)").run(id, name, now, now);
+  } else if (table === "Country" || table === "VehicleType") {
+    db.prepare(`INSERT INTO "${table}" (Id, Name) VALUES (?, ?)`).run(id, name);
+  }
+  return id;
+}
+
+function resolveOrCreateModelId(
+  db: Database.Database,
+  modelName: string,
+  makeId: number
+): number | null {
+  const existing = resolveModelId(db, modelName, makeId);
+  if (existing !== null) {
+    return existing;
+  }
+  const now = new Date().toISOString();
+  const modelId = getNextId(db, "Model");
+  db.prepare("INSERT INTO Model (Id, Name, CreatedOn, UpdatedOn) VALUES (?, ?, ?, ?)").run(modelId, modelName, now, now);
+  db.prepare("INSERT INTO Make_Model (Id, MakeId, ModelId, CreatedOn, UpdatedOn) VALUES (?, ?, ?, ?, ?)").run(
+    getNextId(db, "Make_Model"),
+    makeId,
+    modelId,
+    now,
+    now
+  );
+  return modelId;
+}
+
 function resolveModelId(
   db: Database.Database,
   modelName: string,
@@ -196,11 +247,13 @@ function applyYamlFile(
       wmiId = existingWmi.wmiId;
       makeId = existingWmi.makeId;
     } else {
-      // Resolve new WMI entities
-      const manufacturerId = resolveEntityId(db, "Manufacturer", schema.manufacturer!);
-      makeId = resolveEntityId(db, "Make", schema.make!)!;
-      const countryId = resolveEntityId(db, "Country", schema.country!);
-      const vehicleTypeId = resolveEntityId(db, "VehicleType", schema.vehicle_type!);
+      // Resolve new WMI entities, creating missing ones. VPIC is US-market
+      // data, so non-US manufacturers/makes/models are routinely absent
+      // (e.g. SKODA AUTO) and must be created for EU contributions to work.
+      const manufacturerId = resolveOrCreateEntityId(db, "Manufacturer", schema.manufacturer!);
+      makeId = resolveOrCreateEntityId(db, "Make", schema.make!)!;
+      const countryId = resolveOrCreateEntityId(db, "Country", schema.country!);
+      const vehicleTypeId = resolveOrCreateEntityId(db, "VehicleType", schema.vehicle_type!);
 
       if (!manufacturerId || !makeId || !countryId || !vehicleTypeId) {
         result.error = "Failed to resolve entity IDs";
@@ -270,8 +323,8 @@ function applyYamlFile(
         // Literal value
         attributeId = pattern.value;
       } else if (element.LookupTable === "Model") {
-        // Special handling for Model
-        const modelId = resolveModelId(db, pattern.value, makeId);
+        // Special handling for Model - create it under this Make when missing
+        const modelId = resolveOrCreateModelId(db, pattern.value, makeId);
         if (!modelId) {
           throw new Error(`Model "${pattern.value}" not found for make ID ${makeId}`);
         }
