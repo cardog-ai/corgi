@@ -13,6 +13,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { NodeDatabaseAdapterFactory } from "../lib/db/node-adapter";
 import { VINDecoder } from "../lib/decode";
+import { ErrorCode } from "../lib/types";
 import { join } from "path";
 
 // Sample VINs with expected trim/drive from position 8 motor code
@@ -157,5 +158,54 @@ describe("Community Pattern Validation", () => {
 
     expect(result).toContain("SKIP");
     expect(result).not.toContain("FAIL");
+  });
+});
+
+describe("EU VIN Support (#30)", () => {
+  let decoder: VINDecoder;
+
+  beforeAll(async () => {
+    const dbPath = join(__dirname, "..", "db", "vpic.lite.db");
+    const factory = new NodeDatabaseAdapterFactory();
+    const adapter = await factory.createAdapter(dbPath);
+    decoder = new VINDecoder(adapter);
+  });
+
+  // ISO 3779 does not mandate a check digit at position 9; EU manufacturers
+  // use it freely (e.g. 'Z' in WVGZZZ5NZEW069297). Structure validation must
+  // not block these VINs - the check-digit validator reports a warning instead.
+  it("should accept a non-check-digit character at position 9 (structure)", async () => {
+    const result = await decoder.decode("WVGZZZ5NZEW069297");
+
+    expect(
+      result.errors.some((e) => e.code === ErrorCode.INVALID_CHARACTERS)
+    ).toBe(false);
+  });
+
+  it("should decode Skoda Fabia and Octavia via community patterns (TMB)", async () => {
+    const fabia = await decoder.decode("TMBNJ46Y964564271");
+    expect(fabia.valid).toBe(true);
+    expect(fabia.components?.vehicle?.make).toBe("Skoda");
+    expect(fabia.components?.vehicle?.model).toBe("Fabia");
+    expect(fabia.components?.modelYear?.year).toBe(2006);
+
+    const octavia = await decoder.decode("TMBBS21Z588029342");
+    expect(octavia.valid).toBe(true);
+    expect(octavia.components?.vehicle?.make).toBe("Skoda");
+    expect(octavia.components?.vehicle?.model).toBe("Octavia");
+    expect(octavia.components?.modelYear?.year).toBe(2008);
+  });
+
+  it("should decode EU-market Renault and Peugeot VINs previously blocked", async () => {
+    // Real VINs from issue #30; both were structurally rejected before
+    const megane = await decoder.decode("VF1RFB00068721753");
+    expect(megane.valid).toBe(true);
+    expect(megane.components?.modelYear?.year).toBe(2006);
+
+    const peugeot = await decoder.decode("VF38DRHC8CL054898");
+    expect(peugeot.valid).toBe(true);
+    expect(
+      peugeot.errors.some((e) => e.code === ErrorCode.INVALID_CHECK_DIGIT)
+    ).toBe(true);
   });
 });

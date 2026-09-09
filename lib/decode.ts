@@ -560,14 +560,12 @@ export class VINDecoder {
 
     // Check characters
     const invalidChars = [...vin].reduce((acc, char, index) => {
-      // Position 9 (check digit) can only be 0-9 or X
-      if (index === 8) {
-        if (!/[0-9X]/.test(char)) {
-          acc.push({ char, pos: index + 1 });
-        }
-      }
+      // Position 9 (check digit): US FMVSS 565 requires 0-9 or X, but ISO 3779
+      // (EU and other markets) does not mandate a check digit - manufacturers
+      // use position 9 freely (e.g. 'Z' in WVGZZZ5NZEW069297). Do not block
+      // decoding; the check-digit validator reports a warning instead.
       // Position 10 (year) must be 0-9 or A-Z (except I,O,Q)
-      else if (index === 9) {
+      if (index === 9) {
         if (!/[0-9A-HJ-NPR-Z]/.test(char)) {
           acc.push({ char, pos: index + 1 });
         }

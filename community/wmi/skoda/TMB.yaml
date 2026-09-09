@@ -1,0 +1,72 @@
+# Skoda Auto (Czech Republic)
+# WMI: TMB - SKODA AUTO a.s., Mlada Boleslav
+#
+# EU-market VIN structure (ISO 3779; position 9 is not a check digit for
+# EU manufacturers - Skoda uses it as part of the sequential payload):
+#   4 (p0): Model line / market code (modern era, e.g. NJ = Fabia III)
+#   5 (p1): Equipment / trim level
+#   6 (p2): Passive safety system (0-6, see OEM tables)
+#   7-8 (p3-p4): Model code (VW Group type code, e.g. 6Y = Fabia I, 1Z = Octavia II)
+#   9 (p5): Free / not mandated (commonly 5-9, not a check digit)
+#  10: Model year (standard 30-year code table)
+#  11: Assembly plant (0-4/N = Mlada Boleslav, 5 = Kvasiny, 7-8 = Vrchlabi,
+#      9 = Kvasiny Superb, X = Poznan)
+#
+# Only model codes verifiable against real VINs are included; this file can
+# be extended additively as more codes are confirmed.
+#
+# Sources:
+#   - SKODA VIN structure reference (youcanic.com/skoda-vin-decoder):
+#     positions 7-8 carry the model code for modern models
+#     (6Y - Fabia I, 1Z - Octavia II, ...)
+#   - Real production VINs from cardog-ai/corgi issue #30
+
+wmi: TMB
+mode: new
+
+manufacturer: 'SKODA AUTO a.s.'
+make: Skoda
+country: CZECH REPUBLIC
+vehicle_type: Passenger Car
+
+years:
+  from: 1999 # Fabia I (6Y) production start; TMB assigned earlier
+  to: null # ongoing
+
+schema_name: 'Skoda Schema for TMB (Czech Republic) - Fabia/Octavia'
+
+sources:
+  - type: community
+    url: https://www.youcanic.com/skoda-vin-decoder/
+    description: 'Skoda VIN position reference: positions 7-8 = VW Group model code (6Y Fabia, 1Z Octavia, 3T Superb, ...)'
+  - type: community
+    description: 'Model codes verified against real production VINs reported in cardog-ai/corgi issue #30'
+
+patterns:
+  # === Model code (positions 7-8 -> pattern p3-p4) ===
+  - pattern: '***6Y*'
+    element: Model
+    value: 'Fabia'
+
+  - pattern: '***1Z*'
+    element: Model
+    value: 'Octavia'
+
+  # === Assembly country (all TMB vehicles are built in Czechia) ===
+  - pattern: '******'
+    element: Plant Country
+    value: 'CZECH REPUBLIC'
+
+test_vins:
+  # Real VINs from cardog-ai/corgi issue #30
+  - vin: 'TMBNJ46Y964564271'
+    expected:
+      make: Skoda
+      model: Fabia
+      year: 2006
+
+  - vin: 'TMBBS21Z588029342'
+    expected:
+      make: Skoda
+      model: Octavia
+      year: 2008
