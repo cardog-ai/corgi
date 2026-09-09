@@ -102,7 +102,7 @@
   },
   "license": "ISC",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.0.0 <21.0.0 || >=22.0.0"
   },
   "peerDependencies": {
     "sql.js": "^1.8.0"
