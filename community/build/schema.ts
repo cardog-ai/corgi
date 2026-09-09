@@ -13,6 +13,7 @@ const PATTERN_CHARS = VIN_CHARS + "*";
 // Valid element names from VPIC
 export const VALID_ELEMENTS = [
   "Model",
+  "Make",
   "Body Class",
   "Doors",
   "Drive Type",
@@ -243,16 +244,24 @@ export const wmiFileSchema = z
       seen.add(key);
     }
 
-    // Validate check digits for test VINs
+    // Validate check digits for test VINs. The position-9 check digit is a
+    // North American requirement (49 CFR 565.15(c)); ISO 3779 does not
+    // mandate it and EU manufacturers use position 9 freely as payload.
+    // WMIs beginning 1-5 are North American (49 CFR 565, App. C);
+    // for others a mismatch is reported as a warning by validateWmiFile,
+    // mirroring the decoder which treats check-digit failure as a warning.
+    const isNorthAmericanWmi = /^[1-5]/.test(data.wmi);
     for (let i = 0; i < data.test_vins.length; i++) {
       const vin = data.test_vins[i].vin;
-      const check = validateCheckDigit(vin);
-      if (!check.valid) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Invalid check digit: position 9 is '${vin[8]}', expected '${check.expected}'`,
-          path: ["test_vins", i, "vin"],
-        });
+      if (isNorthAmericanWmi) {
+        const check = validateCheckDigit(vin);
+        if (!check.valid) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Invalid check digit: position 9 is '${vin[8]}', expected '${check.expected}'`,
+            path: ["test_vins", i, "vin"],
+          });
+        }
       }
 
       // Validate that test VIN starts with the WMI
@@ -303,13 +312,17 @@ export const supplementalFileSchema = z
 
     for (let i = 0; i < data.test_vins.length; i++) {
       const vin = data.test_vins[i].vin;
-      const check = validateCheckDigit(vin);
-      if (!check.valid) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Invalid check digit: position 9 is '${vin[8]}', expected '${check.expected}'`,
-          path: ["test_vins", i, "vin"],
-        });
+      // Check digit enforced only for North American WMIs; see the comment
+      // in the primary schema's superRefine above.
+      if (/^[1-5]/.test(data.wmi)) {
+        const check = validateCheckDigit(vin);
+        if (!check.valid) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Invalid check digit: position 9 is '${vin[8]}', expected '${check.expected}'`,
+            path: ["test_vins", i, "vin"],
+          });
+        }
       }
 
       if (!vin.startsWith(data.wmi)) {
@@ -393,6 +406,23 @@ export function validateWmiFile(data: unknown): ValidationResult {
       path: "test_vins",
       message: `Only ${validData.test_vins.length} test VIN(s) provided. Recommend at least 3.`,
     });
+  }
+
+  // Warn about check-digit mismatches on non-North-American WMIs. The check
+  // digit is a 49 CFR 565.15(c) requirement; EU VINs (ISO 3779) often carry
+  // non-check-digit payload at position 9, and the decoder reports the
+  // mismatch as a warning rather than an error.
+  if (!/^[1-5]/.test(validData.wmi)) {
+    for (let i = 0; i < validData.test_vins.length; i++) {
+      const vin = validData.test_vins[i].vin;
+      const check = validateCheckDigit(vin);
+      if (!check.valid) {
+        warnings.push({
+          path: `test_vins.${i}`,
+          message: `Check digit mismatch: position 9 is '${vin[8]}', NA calculation expects '${check.expected}'. EU VINs are not required to carry a valid NA check digit; the decoder reports this as a warning.`,
+        });
+      }
+    }
   }
 
   // Warn about fully wildcard patterns (all 6 positions)

@@ -408,3 +408,45 @@ describe("VIN Decoder Library", () => {
     });
   });
 });
+
+describe("Model year 30-year-block disambiguation (4DR bus VINs, #35)", () => {
+  let adapter: DatabaseAdapter;
+  let decoder: VINDecoder;
+
+  beforeAll(async () => {
+    adapter = await getAdapter();
+    decoder = new VINDecoder(adapter);
+  });
+
+  afterAll(async () => {
+    await adapter.close();
+  });
+
+  // IC Bus (WMI 4DR) uses a digit at VIN position 7. The position-7 decade
+  // rule in 49 CFR 565.15 (Table VII note) only covers passenger cars, MPVs
+  // and light trucks, so a digit there must not force the 1980-2009 block.
+  // Year code "G" with digit position 7: 1986 (primary) vs 2016 (alternate).
+  it("decodes a 4DR bus VIN with digit at position 7 as 2016, not 1986", async () => {
+    const result = await decoder.decode("4DRAM1235GP123456");
+
+    expect(result.valid).toBe(true);
+    expect(result.components.modelYear?.year).toBe(2016);
+    expect(result.errors).not.toContainEqual(
+      expect.objectContaining({ code: ErrorCode.NO_PATTERNS_FOUND })
+    );
+    expect(result.components.vehicle?.make).toBe("IC Bus");
+    expect(result.metadata?.matchedSchema).toContain("2016");
+  });
+
+  // Passenger cars and light trucks keep the position-7 rule: digit at
+  // position 7 pins the 1980-2009 block as the primary year. The alternate
+  // (other 30-year block, same year code) is informational — the retry only
+  // fires when the primary year yields no patterns.
+  it("still decodes a 1996 Ford truck VIN as 1996 (no behavior change)", async () => {
+    const result = await decoder.decode("2FTEF14H8TCA73155");
+
+    expect(result.valid).toBe(true);
+    expect(result.components.modelYear?.year).toBe(1996);
+    expect(result.components.modelYear?.alternateYear).toBe(2026);
+  });
+});

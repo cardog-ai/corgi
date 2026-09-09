@@ -1,0 +1,49 @@
+# Ford Focus (EU market, Ford of Europe)
+# WMI: WF0 - Ford Werke AG, Cologne
+#
+# Supplement to the existing VPIC WF0 schemas, which cover the US-market
+# Focus RS only. EU-market Focuses carry the Ford-Europe payload where
+# positions 7-8 hold the model code (GC = Focus III family) and position
+# 9 is filler - EU VINs are not required to carry a check digit at
+# position 9 (ISO 3779).
+#
+#   4 (p0): 'K' - Ford-Europe body/series marker for this Focus family
+#   5-6 (p1-p2): 'XX' - EU type-approval placeholders
+#   7-8 (p3-p4): 'GC' - Ford-Europe model code for Focus III (2011-2018
+#           production, sold on through 2019 in some markets)
+#   9 (p5): 'B' - filler, not a check digit
+#  10:      Model year code: 'K' at 2010-block index 8 -> 2019 (position 7
+#           is a letter, so no decade ambiguity)
+#
+# Sources:
+#   - Ford-Europe VIN conventions (WF0KXXGCBK... = Focus) documented
+#     across public VIN references
+#   - Real production VIN from cardog-ai/corgi issue #30
+
+wmi: WF0
+mode: supplement
+
+years:
+  from: 2011 # Focus III production start
+  to: 2019
+
+sources:
+  - type: community
+    description: 'Ford-Europe model code GC = Focus (positions 7-8); EU-market payload not covered by US VPIC schemas'
+  - type: community
+    description: 'Real production VIN from cardog-ai/corgi issue #30'
+
+patterns:
+  # === Model code (positions 7-8 -> pattern p3-p4) ===
+  - pattern: '***GC*'
+    element: Model
+    value: 'Focus'
+
+test_vins:
+  # Real VIN from cardog-ai/corgi issue #30. Position 10 'K' with letter
+  # position 7 resolves directly to 2019 in the 2010 block.
+  - vin: 'WF0KXXGCBKBJ13223'
+    expected:
+      make: Ford
+      model: Focus
+      year: 2019

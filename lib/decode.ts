@@ -188,8 +188,20 @@ export class VINDecoder {
         const vds = cleanVin.substring(3, 9);
         const vis = cleanVin.substring(9, 17);
 
-        // Get pattern matches for this VIN
-        const patterns = await this.patternMatcher.getPatternMatches(wmi, modelYear.year, vds, vis);
+        // Get pattern matches for this VIN. When the primary year yields no
+        // matches and the position-7 decade heuristic was ambiguous, retry
+        // with the alternate 30-year-block year (see determineModelYear).
+        let patterns = await this.patternMatcher.getPatternMatches(wmi, modelYear.year, vds, vis);
+        let resolvedModelYear = modelYear;
+        if (patterns.length === 0 && modelYear.alternateYear && modelYear.source === 'position') {
+          const retried = await this.patternMatcher.getPatternMatches(wmi, modelYear.alternateYear, vds, vis);
+          if (retried.length > 0) {
+            logger.debug({ wmi, year: modelYear.year, alternateYear: modelYear.alternateYear }, 'No patterns for primary year; matched with alternate 30-year block');
+            patterns = retried;
+            resolvedModelYear = { ...modelYear, year: modelYear.alternateYear, alternateYear: undefined, confidence: 0.5 };
+            result.components.modelYear = resolvedModelYear;
+          }
+        }
 
         if (patterns.length > 0) {
           // Split patterns into VDS and VIS components
@@ -212,7 +224,7 @@ export class VINDecoder {
           }
 
           // Extract core vehicle information
-          result.components.vehicle = this.extractVehicleInfo(patterns, wmiInfo, modelYear);
+          result.components.vehicle = this.extractVehicleInfo(patterns, wmiInfo, resolvedModelYear);
 
           result.components.plant = this.extractPlantInfo(patterns, cleanVin);
           result.components.engine = this.extractEngineInfo(patterns);
@@ -560,14 +572,12 @@ export class VINDecoder {
 
     // Check characters
     const invalidChars = [...vin].reduce((acc, char, index) => {
-      // Position 9 (check digit) can only be 0-9 or X
-      if (index === 8) {
-        if (!/[0-9X]/.test(char)) {
-          acc.push({ char, pos: index + 1 });
-        }
-      }
+      // Position 9 (check digit): US FMVSS 565 requires 0-9 or X, but ISO 3779
+      // (EU and other markets) does not mandate a check digit - manufacturers
+      // use position 9 freely (e.g. 'Z' in WVGZZZ5NZEW069297). Do not block
+      // decoding; the check-digit validator reports a warning instead.
       // Position 10 (year) must be 0-9 or A-Z (except I,O,Q)
-      else if (index === 9) {
+      if (index === 9) {
         if (!/[0-9A-HJ-NPR-Z]/.test(char)) {
           acc.push({ char, pos: index + 1 });
         }
@@ -636,11 +646,21 @@ export class VINDecoder {
       return null;
     }
 
-    // Position 7 determines the decade block per 49 CFR 565.15
-    const baseYear = position7 >= 48 && position7 <= 57 ? 1980 : 2010;
+    // Position 7 determines the decade block per 49 CFR 565.15, but the
+    // position-7 note in Table VII only applies to passenger cars, MPVs and
+    // light trucks (<= 4,536 kg). Buses, heavy trucks and other vehicle types
+    // may legally use a digit at position 7, so the 1980-block inference is
+    // ambiguous for them. Keep the alternate 30-year-block year so callers
+    // can retry when the primary year yields no matches.
+    const isDigit = position7 >= 48 && position7 <= 57;
+    const baseYear = isDigit ? 1980 : 2010;
 
-    // Adjust year for older vehicles
     let adjustedYear = baseYear + index;
+
+    // For numeric position 7 the other 30-year-block year (current cycle) is
+    // the retry candidate; 1980 + index is always <= 2009, so +30 lands in
+    // 2010-2039.
+    const alternateYear = isDigit ? adjustedYear + 30 : undefined;
 
     // If the year would be in the future, subtract 30 years
     // This handles older vehicles from previous cycles
@@ -651,6 +671,7 @@ export class VINDecoder {
 
     return {
       year: adjustedYear,
+      alternateYear,
       source: 'position',
       confidence: 1,
     };
