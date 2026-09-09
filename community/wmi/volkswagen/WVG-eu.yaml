@@ -1,0 +1,51 @@
+# Volkswagen Tiguan (EU market)
+# WMI: WVG - Volkswagen AG (SUV/MPV series)
+#
+# Supplement to the existing VPIC WVG schemas, which cover US-market
+# Tiguan/Atlas/ID.4 trims. EU-market first-generation Tiguans carry the
+# VW Group type code 5N at positions 7-8; the US VPIC patterns do not
+# match that payload, so EU VINs fall through with "No matching patterns".
+#
+#   4-8 (VDS): 5N = Tiguan (VW Group type code), then equipment/engine
+#              payload chars
+#   9 (p5):    'Z' filler - EU VINs are not required to carry a check
+#              digit at position 9 (ISO 3779)
+#  10:         Model year code; this VIN's position 7 is a digit, which
+#              puts it in the 1980 block per 49 CFR 565.15 Table VII
+#              (1984). The decoder's alternate-block retry (30 years)
+#              resolves the true 2014 model year.
+#
+# Sources:
+#   - VW Group type codes (5N = Tiguan) are documented across public
+#     VIN-decoding references (e.g. vin-decoder service type-code tables)
+#   - Real production VIN from cardog-ai/corgi issue #30
+
+wmi: WVG
+mode: supplement
+
+years:
+  from: 2007 # Tiguan (5N) production start
+  to: 2016 # end of the 5N era
+
+sources:
+  - type: community
+    description: 'VW Group type code 5N = Tiguan (positions 7-8); EU-market payload not covered by US VPIC schemas'
+  - type: community
+    description: 'Real production VIN from cardog-ai/corgi issue #30'
+
+patterns:
+  # === Type code (positions 7-8 -> pattern p3-p4) ===
+  - pattern: '***5N*'
+    element: Model
+    value: 'Tiguan'
+
+test_vins:
+  # Real VIN from cardog-ai/corgi issue #30.
+  # Year resolves via the alternate 30-year-block retry (position 7 is a
+  # digit, so the primary 1980-block year 1984 yields no patterns and the
+  # decoder retries with 2014).
+  - vin: 'WVGZZZ5NZEW069297'
+    expected:
+      make: Volkswagen
+      model: Tiguan
+      year: 2014

@@ -323,12 +323,32 @@ function applyYamlFile(
         // Literal value
         attributeId = pattern.value;
       } else if (element.LookupTable === "Model") {
-        // Special handling for Model - create it under this Make when missing
-        const modelId = resolveOrCreateModelId(db, pattern.value, makeId);
+        // Special handling for Model - create it under this Make when
+        // missing. When the same pattern key also carries a Make pattern
+        // (brand re-attribution, e.g. Dacia under Renault's VF1), link the
+        // model to the pattern-declared brand instead of the WMI-level one.
+        const makePattern = schema.patterns.find(
+          (p) => p.pattern === pattern.pattern && p.element === "Make"
+        );
+        const owningMakeId = makePattern
+          ? resolveOrCreateEntityId(db, "Make", makePattern.value) ?? makeId
+          : makeId;
+        const modelId = resolveOrCreateModelId(db, pattern.value, owningMakeId);
         if (!modelId) {
-          throw new Error(`Model "${pattern.value}" not found for make ID ${makeId}`);
+          throw new Error(`Model "${pattern.value}" not found for make ID ${owningMakeId}`);
         }
         attributeId = String(modelId);
+      } else if (element.LookupTable === "Make") {
+        // Make patterns re-attribute pattern-matched VINs to a different
+        // brand than the WMI-level make (e.g. Dacia vehicles built under
+        // Renault's VF1 WMI, which VPIC maps to the legacy "Eagle" make).
+        // VPIC is US-market data, so community brands are often absent and
+        // must be created.
+        const patternMakeId = resolveOrCreateEntityId(db, "Make", pattern.value);
+        if (!patternMakeId) {
+          throw new Error(`Failed to resolve or create Make "${pattern.value}"`);
+        }
+        attributeId = String(patternMakeId);
       } else if (pattern.element === "Plant Country") {
         const countryId = resolveEntityId(db, "Country", pattern.value);
         if (!countryId) {

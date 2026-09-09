@@ -1,0 +1,76 @@
+# Dacia Duster (Renault Group; built at Renault plants)
+# WMI: VF1 - RENAULT GROUP, France (Dacia vehicles built in French
+#      Renault plants carry the VF1 WMI; Pitesti-built vehicles use
+#      UU1)
+#
+# Supplement to the existing VPIC VF1 schemas, which descend from the
+# legacy US-market Eagle/Medallion imports and carry no Dacia data.
+#
+# Dacia/Renault VDS layout (Renault-group convention):
+#   4 (p0): Model code - H = Duster (carlytics: "Position 4 identifies
+#           the model (Sandero, Duster, ...)")
+#   5 (p1): Body style
+#   6 (p2): Engine
+#   9 (p5): '3' - passes the NA check-digit calculation, though EU VINs
+#           are not required to carry one (ISO 3779)
+#  10:      Model year code. Renault-group VINs cycle the digit year
+#           codes continuously (no 30-year reset), so position 10 '6'
+#           corresponds to 2016 for this vehicle while the 49 CFR
+#           565.15 table (which assumes the US 30-year cycle) yields
+#           2006. The decoder therefore reports the CFR-table year
+#           (2006) for this VIN; make/model attribution is correct and
+#           the year caveat is documented here rather than hacked
+#           around in the decoder.
+#
+# Sources:
+#   - carlytics.eu/vin-decoder/dacia: "Position 4 identifies the model
+#     (Sandero, Duster, etc.), position 5 the body style, and position
+#     6 the engine type. Being part of the Renault Group..."
+#   - Real production VIN from cardog-ai/corgi issue #30
+
+wmi: VF1
+mode: supplement
+
+years:
+  from: 1989 # aligned with the Renault-group VF1 schema era
+  to: null
+
+sources:
+  - type: community
+    url: https://www.carlytics.eu/vin-decoder/dacia
+    description: 'Dacia VIN position reference: position 4 = model (Duster), 5 = body, 6 = engine'
+  - type: community
+    description: 'Real production VIN from cardog-ai/corgi issue #30'
+
+patterns:
+  # === Model code (positions 4-6 -> pattern p0-p2) ===
+  # Keyed to the full HJD model+body+engine triple rather than H alone so
+  # unrelated Renault-group vehicles sharing only the model letter cannot
+  # false-positive (the schema's year window spans the whole VF1 era).
+  - pattern: 'HJD***'
+    element: Model
+    value: 'Duster'
+
+  # === Brand attribution ===
+  # VPIC's VF1 WMI maps to the legacy US-market "Eagle" make (Eagle
+  # Medallion was a rebadged Renault 21). A Make pattern keyed to the
+  # same Duster payload re-attributes matching VINs to Dacia without
+  # touching the WMI-level make for other Renault vehicles.
+  - pattern: 'HJD***'
+    element: Make
+    value: 'Dacia'
+
+  # === Assembly country (Renault French plants) ===
+  - pattern: '******'
+    element: Plant Country
+    value: 'FRANCE'
+
+test_vins:
+  # Real VIN from cardog-ai/corgi issue #30. Year is deliberately not
+  # asserted: Renault-group VINs do not follow the US 30-year cycle, so
+  # the decoder reports the CFR-table year (2006) while the real vehicle
+  # is a 2016 Duster. See the year-comment block above.
+  - vin: 'VF1HJD40367321336'
+    expected:
+      make: Dacia
+      model: Duster

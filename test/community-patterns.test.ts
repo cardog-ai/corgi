@@ -208,4 +208,44 @@ describe("EU VIN Support (#30)", () => {
       peugeot.errors.some((e) => e.code === ErrorCode.INVALID_CHECK_DIGIT)
     ).toBe(true);
   });
+
+  // VW Tiguan: EU-market 5N type code with digit position 7 -> primary year
+  // (1980 block) yields no patterns; the alternate-block retry resolves 2014.
+  it("should decode EU-market VW Tiguan via type code and year retry (WVG)", async () => {
+    const tiguan = await decoder.decode("WVGZZZ5NZEW069297");
+
+    expect(tiguan.valid).toBe(true);
+    expect(tiguan.components?.vehicle?.make).toBe("Volkswagen");
+    expect(tiguan.components?.vehicle?.model).toBe("Tiguan");
+    expect(tiguan.components?.modelYear?.year).toBe(2014);
+    // Position 9 'Z' is EU payload, not a check digit - flagged as a
+    // warning-severity check-digit notice while the decode stays valid
+    expect(
+      tiguan.errors.some((e) => e.code === ErrorCode.INVALID_CHECK_DIGIT)
+    ).toBe(true);
+  });
+
+  // Ford Focus (EU): Ford-Europe GC model code, letter position 7 -> year
+  // resolves directly to 2019 in the 2010 block.
+  it("should decode EU-market Ford Focus via model code (WF0)", async () => {
+    const focus = await decoder.decode("WF0KXXGCBKBJ13223");
+
+    expect(focus.valid).toBe(true);
+    expect(focus.components?.vehicle?.make).toBe("Ford");
+    expect(focus.components?.vehicle?.model).toBe("Focus");
+    expect(focus.components?.modelYear?.year).toBe(2019);
+  });
+
+  // Dacia Duster under Renault's VF1 WMI: Make pattern re-attributes the
+  // legacy US-market Eagle make; Model links to Dacia. Renault-group VINs
+  // do not follow the US 30-year cycle, so the CFR-table year (2006) is
+  // reported while the real vehicle is a 2016 Duster (documented in the
+  // YAML); the test asserts only brand and model.
+  it("should decode Dacia Duster with brand re-attribution (VF1)", async () => {
+    const duster = await decoder.decode("VF1HJD40367321336");
+
+    expect(duster.valid).toBe(true);
+    expect(duster.components?.vehicle?.make).toBe("Dacia");
+    expect(duster.components?.vehicle?.model).toBe("Duster");
+  });
 });
